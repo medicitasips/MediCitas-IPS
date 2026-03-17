@@ -4,11 +4,11 @@
 -- Programa ADSO19 – SENA
 -- =============================================================
 
-CREATE DATABASE IF NOT EXISTS eps_citas
+CREATE DATABASE IF NOT EXISTS railway
   CHARACTER SET utf8mb4
   COLLATE utf8mb4_spanish_ci;
 
-USE eps_citas;
+USE railway;
 
 -- =============================================================
 -- CATÁLOGO: eps
