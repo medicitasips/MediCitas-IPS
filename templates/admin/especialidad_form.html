@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}{% if especialidad %}Editar Especialidad{% else %}Nueva Especialidad{% endif %} – Admin{% endblock %}
+{% block content %}
+<div class="container-fluid px-4 py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-5">
+      <div class="page-header mb-4">
+        <div class="page-icon bg-purple-soft"><i class="bi bi-clipboard2-pulse-fill text-purple"></i></div>
+        <div><h2 class="page-title">{% if especialidad %}Editar{% else %}Nueva{% endif %} Especialidad</h2></div>
+      </div>
+      <div class="form-card">
+        <form method="POST">
+          <div class="mb-3">
+            <label class="form-label">Nombre <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" name="nombre"
+                   value="{{ especialidad.nombre if especialidad else '' }}" required />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">
+              <i class="bi bi-clock me-1"></i>Duración estándar (minutos) <span class="text-danger">*</span>
+            </label>
+            <input type="number" class="form-control" name="duracion_min"
+                   min="10" max="120" step="5"
+                   value="{{ especialidad.duracion_min if especialidad else 30 }}" required />
+            <div class="form-text">Tiempo reservado por cita (10–120 min).</div>
+          </div>
+          {% if especialidad %}
+          <div class="mb-3">
+            <label class="form-label">Estado</label>
+            <select class="form-select" name="activa">
+              <option value="1" {% if especialidad.activa %}selected{% endif %}>Activa</option>
+              <option value="0" {% if not especialidad.activa %}selected{% endif %}>Inactiva</option>
+            </select>
+          </div>
+          {% endif %}
+          <div class="d-flex gap-3 mt-3">
+            <button type="submit" class="btn btn-primary-custom"><i class="bi bi-check-circle me-2"></i>Guardar</button>
+            <a href="{{ url_for('admin.especialidades_lista') }}" class="btn btn-light">Cancelar</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

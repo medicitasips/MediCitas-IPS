@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% from 'partials/estado_badge.html' import badge %}
+{% block title %}Mis Citas – MediCitas{% endblock %}
+{% block content %}
+<div class="container-fluid px-4 py-4">
+
+  <div class="patient-info-card mb-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+      <div class="d-flex align-items-center gap-3">
+        <div class="patient-avatar"><i class="bi bi-person-circle"></i></div>
+        <div>
+          <h5 class="mb-0">{{ perfil.nombre }} {{ perfil.apellido }}</h5>
+          <small class="text-muted">
+            <i class="bi bi-card-text me-1"></i>{{ perfil.documento }}
+            &bull; <i class="bi bi-hospital me-1"></i>{{ perfil.eps_nombre }}
+          </small>
+        </div>
+      </div>
+      <a href="{{ url_for('paciente.reservar') }}" class="btn btn-primary-custom">
+        <i class="bi bi-calendar-plus me-2"></i>Nueva Cita
+      </a>
+    </div>
+  </div>
+
+  <h5 class="fw-700 mb-3">Mis Citas</h5>
+  {% if citas %}
+    {% for c in citas %}
+    <div class="cita-card mb-3
+      {% if c.estado == 'Cancelada' %}cita-cancelada
+      {% elif c.estado == 'Completada' %}cita-completada
+      {% else %}cita-activa{% endif %}">
+
+      <div class="cita-card-header">
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+          <div>
+            <span class="tipo-badge tipo-{{ c.especialidad | lower | replace(' ','') | replace('ó','o') | replace('é','e') | truncate(12,true,'') }}">
+              <i class="bi bi-clipboard2-pulse me-1"></i>{{ c.especialidad }}
+            </span>
+            <h5 class="mt-2 mb-0">Dr(a). {{ c.med_nombre }} {{ c.med_apellido }}</h5>
+          </div>
+          {{ badge(c) }}
+        </div>
+      </div>
+
+      <div class="cita-card-body">
+        <div class="row g-2">
+          <div class="col-sm-4">
+            <div class="detail-item">
+              <i class="bi bi-calendar-date text-primary"></i>
+              <span>{{ c.fecha }}</span>
+            </div>
+          </div>
+          <div class="col-sm-4">
+            <div class="detail-item">
+              <i class="bi bi-clock text-primary"></i>
+              <span>{{ c.hora_inicio }} – {{ c.hora_fin }}</span>
+            </div>
+          </div>
+          <div class="col-sm-4">
+            <div class="detail-item">
+              <i class="bi bi-hospital text-primary"></i>
+              <span>{{ c.eps_nombre }}</span>
+            </div>
+          </div>
+          {% if c.motivo %}
+          <div class="col-12">
+            <div class="detail-item">
+              <i class="bi bi-chat-text text-primary"></i>
+              <span>{{ c.motivo }}</span>
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      {% if c.estado == 'Activa' %}
+      <div class="cita-card-footer">
+        <a href="{{ url_for('paciente.editar_cita', id_cita=c.id_cita) }}"
+           class="btn btn-sm btn-outline-primary">
+          <i class="bi bi-pencil me-1"></i>Modificar
+        </a>
+        <form method="POST"
+              action="{{ url_for('paciente.cancelar_cita', id_cita=c.id_cita) }}"
+              class="d-inline"
+              onsubmit="return confirm('¿Cancelar esta cita?')">
+          <button type="submit" class="btn btn-sm btn-outline-danger">
+            <i class="bi bi-x-circle me-1"></i>Cancelar
+          </button>
+        </form>
+      </div>
+      {% endif %}
+
+    </div>
+    {% endfor %}
+  {% else %}
+    <div class="empty-state">
+      <i class="bi bi-calendar-x"></i>
+      <h5>No tienes citas registradas</h5>
+      <a href="{{ url_for('paciente.reservar') }}" class="btn btn-primary-custom mt-2">
+        <i class="bi bi-calendar-plus me-2"></i>Reservar ahora
+      </a>
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

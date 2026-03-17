@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Usuarios – Admin{% endblock %}
+{% block content %}
+<div class="container-fluid px-4 py-4">
+  <div class="page-header mb-4">
+    <div class="page-icon bg-orange-soft"><i class="bi bi-shield-person text-warning"></i></div>
+    <div>
+      <h2 class="page-title">Usuarios del Sistema</h2>
+      <p class="page-subtitle">{{ usuarios|length }} usuario(s)</p>
+    </div>
+  </div>
+
+  <div class="form-card p-0">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="table-light">
+          <tr><th>#</th><th>Usuario</th><th>Rol</th><th>Estado</th><th>Registro</th><th class="text-center">Acción</th></tr>
+        </thead>
+        <tbody>
+          {% for u in usuarios %}
+          <tr>
+            <td>{{ u.id_usuario }}</td>
+            <td><strong>{{ u.username }}</strong></td>
+            <td><span class="rol-badge rol-{{ u.rol }}">{{ u.rol }}</span></td>
+            <td>
+              {% if u.activo %}<span class="badge bg-success">Activo</span>
+              {% else %}<span class="badge bg-secondary">Inactivo</span>{% endif %}
+            </td>
+            <td><small>{{ u.fecha_registro }}</small></td>
+            <td class="text-center">
+              {% if u.id_usuario != current_user.id %}
+              <form method="POST" action="{{ url_for('admin.usuario_toggle', id_usuario=u.id_usuario) }}"
+                    class="d-inline">
+                <button class="btn btn-sm {% if u.activo %}btn-outline-warning{% else %}btn-outline-success{% endif %}"
+                        title="{% if u.activo %}Desactivar{% else %}Activar{% endif %}">
+                  <i class="bi {% if u.activo %}bi-toggle-on{% else %}bi-toggle-off{% endif %}"></i>
+                </button>
+              </form>
+              {% else %}
+                <span class="text-muted small">Tú</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

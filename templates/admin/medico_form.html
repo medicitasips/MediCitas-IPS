@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}{% if medico %}Editar Médico{% else %}Nuevo Médico{% endif %} – Admin{% endblock %}
+{% block content %}
+<div class="container-fluid px-4 py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="page-header mb-4">
+        <div class="page-icon bg-blue-soft"><i class="bi bi-person-badge-fill text-primary"></i></div>
+        <div><h2 class="page-title">{% if medico %}Editar Médico{% else %}Nuevo Médico{% endif %}</h2></div>
+      </div>
+      <div class="form-card">
+        <form method="POST" novalidate>
+          <div class="row g-3">
+
+            {% if not medico %}
+            <div class="col-12"><h6 class="section-divider">Credenciales de acceso</h6></div>
+            <div class="col-md-6">
+              <label class="form-label">Usuario <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" name="username"
+                     value="{{ form_data.get('username','') }}" required />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Contraseña <span class="text-danger">*</span></label>
+              <input type="password" class="form-control" name="password"
+                     placeholder="mínimo 8 caracteres" required />
+            </div>
+            {% endif %}
+
+            <div class="col-12"><h6 class="section-divider {% if not medico %}mt-2{% endif %}">Datos del médico</h6></div>
+
+            {% if not medico %}
+            <div class="col-md-4">
+              <label class="form-label">Documento <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" name="documento"
+                     value="{{ form_data.get('documento','') }}" maxlength="15" required />
+            </div>
+            {% endif %}
+
+            <div class="col-md-4">
+              <label class="form-label">Nombre <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" name="nombre"
+                     value="{{ form_data.get('nombre','') }}" required />
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Apellido <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" name="apellido"
+                     value="{{ form_data.get('apellido','') }}" required />
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Teléfono</label>
+              <input type="tel" class="form-control" name="telefono"
+                     value="{{ form_data.get('telefono','') }}" />
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Correo</label>
+              <input type="email" class="form-control" name="correo"
+                     value="{{ form_data.get('correo','') }}" />
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Especialidad <span class="text-danger">*</span></label>
+              <select class="form-select" name="id_especialidad" required>
+                <option value="">— Seleccione —</option>
+                {% for e in especialidades %}
+                  <option value="{{ e.id_especialidad }}"
+                    {% if form_data.get('id_especialidad')|string == e.id_especialidad|string
+                       or (medico and medico.id_especialidad == e.id_especialidad) %}selected{% endif %}>
+                    {{ e.nombre }} ({{ e.duracion_min }} min)
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+
+          </div>
+          <div class="d-flex gap-3 mt-4">
+            <button type="submit" class="btn btn-primary-custom">
+              <i class="bi bi-check-circle me-2"></i>Guardar
+            </button>
+            <a href="{{ url_for('admin.medicos_lista') }}" class="btn btn-light">Cancelar</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

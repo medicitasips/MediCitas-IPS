@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% from 'partials/estado_badge.html' import badge %}
+{% block title %}Detalle Cita #{{ cita.id_cita }} – Médico{% endblock %}
+{% block content %}
+<div class="container-fluid px-4 py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-6">
+      <div class="page-header mb-4">
+        <div class="page-icon bg-blue-soft"><i class="bi bi-file-medical-fill text-primary"></i></div>
+        <div>
+          <h2 class="page-title">Cita #{{ cita.id_cita }}</h2>
+          <p class="page-subtitle">Dr(a). {{ perfil.nombre }} {{ perfil.apellido }}</p>
+        </div>
+      </div>
+
+      <div class="form-card">
+        <div class="row g-3">
+          <div class="col-12">
+            <h6 class="section-divider">Datos del paciente</h6>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-muted">Nombre</label>
+            <p class="fw-600">{{ cita.pac_nombre }} {{ cita.pac_apellido }}</p>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-muted">Documento</label>
+            <p><code>{{ cita.pac_documento }}</code></p>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-muted">Teléfono</label>
+            <p>{{ cita.pac_telefono }}</p>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-muted">Correo</label>
+            <p>{{ cita.pac_correo }}</p>
+          </div>
+          <div class="col-12"><h6 class="section-divider">Datos de la cita</h6></div>
+          <div class="col-md-6">
+            <label class="form-label text-muted">Especialidad</label>
+            <p>{{ cita.especialidad }}</p>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-muted">EPS</label>
+            <p>{{ cita.eps_nombre }}</p>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label text-muted">Fecha</label>
+            <p>{{ cita.fecha }}</p>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label text-muted">Horario</label>
+            <p>{{ cita.hora_inicio }} – {{ cita.hora_fin }}</p>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label text-muted">Estado</label>
+            <p>{{ badge(cita) }}</p>
+          </div>
+          {% if cita.motivo %}
+          <div class="col-12">
+            <label class="form-label text-muted">Motivo</label>
+            <p>{{ cita.motivo }}</p>
+          </div>
+          {% endif %}
+        </div>
+
+        <div class="d-flex gap-3 mt-4">
+          {% if cita.estado == 'Activa' %}
+          <form method="POST" action="{{ url_for('medico.completar_cita', id_cita=cita.id_cita) }}">
+            <button class="btn btn-success-custom">
+              <i class="bi bi-check2-circle me-2"></i>Marcar Completada
+            </button>
+          </form>
+          {% endif %}
+          <a href="{{ url_for('medico.dashboard') }}" class="btn btn-light">
+            <i class="bi bi-arrow-left me-1"></i>Volver
+          </a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

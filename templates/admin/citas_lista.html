@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% from 'partials/estado_badge.html' import badge %}
+{% block title %}Todas las Citas – Admin{% endblock %}
+{% block content %}
+<div class="container-fluid px-4 py-4">
+  <div class="page-header mb-4">
+    <div class="page-icon bg-purple-soft"><i class="bi bi-calendar-week text-purple"></i></div>
+    <div>
+      <h2 class="page-title">Gestión de Citas</h2>
+      <p class="page-subtitle">{{ citas|length }} cita(s) en total</p>
+    </div>
+  </div>
+
+  <div class="form-card p-0">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>#</th><th>Paciente</th><th>Médico</th><th>Especialidad</th>
+            <th>Fecha</th><th>Horario</th><th>EPS</th><th>Estado</th><th class="text-center">Acción</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in citas %}
+          <tr>
+            <td><code>{{ c.id_cita }}</code></td>
+            <td>{{ c.pac_nombre }} {{ c.pac_apellido }}</td>
+            <td>{{ c.med_nombre }} {{ c.med_apellido }}</td>
+            <td>{{ c.especialidad }}</td>
+            <td>{{ c.fecha }}</td>
+            <td><small>{{ c.hora_inicio }} – {{ c.hora_fin }}</small></td>
+            <td>{{ c.eps_nombre }}</td>
+            <td>{{ badge(c) }}</td>
+            <td class="text-center">
+              {% if c.estado == 'Activa' %}
+              <form method="POST"
+                    action="{{ url_for('admin.cita_cambiar_estado', id_cita=c.id_cita, estado='Completada') }}"
+                    class="d-inline">
+                <button class="btn btn-sm btn-outline-success" title="Marcar completada">
+                  <i class="bi bi-check2-circle"></i>
+                </button>
+              </form>
+              <form method="POST"
+                    action="{{ url_for('admin.cita_cambiar_estado', id_cita=c.id_cita, estado='Cancelada') }}"
+                    class="d-inline"
+                    onsubmit="return confirm('¿Cancelar cita #{{ c.id_cita }}?')">
+                <button class="btn btn-sm btn-outline-danger" title="Cancelar">
+                  <i class="bi bi-x-circle"></i>
+                </button>
+              </form>
+              {% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="9" class="text-center py-4 text-muted">Sin citas registradas.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Registro de Paciente – MediCitas EPS{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper auth-wrapper-wide">
+  <div class="auth-card">
+
+    <div class="auth-header">
+      <div class="auth-logo bg-green-soft"><i class="bi bi-person-plus-fill text-success"></i></div>
+      <h2 class="auth-title">Crear Cuenta</h2>
+      <p class="auth-subtitle">Regístrate para agendar tus citas médicas</p>
+    </div>
+
+    <form method="POST" action="{{ url_for('auth.registro') }}" novalidate>
+      <div class="row g-3">
+
+        <div class="col-12"><h6 class="section-divider">Acceso al sistema</h6></div>
+
+        <div class="col-md-6">
+          <label class="form-label"><i class="bi bi-person me-1"></i>Usuario <span class="text-danger">*</span></label>
+          <input type="text" class="form-control" name="username"
+                 value="{{ form_data.get('username','') }}"
+                 placeholder="mínimo 4 caracteres" required />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label"><i class="bi bi-lock me-1"></i>Contraseña <span class="text-danger">*</span></label>
+          <input type="password" class="form-control" name="password"
+                 placeholder="mínimo 8 caracteres" required />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label"><i class="bi bi-lock-fill me-1"></i>Confirmar <span class="text-danger">*</span></label>
+          <input type="password" class="form-control" name="password2"
+                 placeholder="repetir contraseña" required />
+        </div>
+
+        <div class="col-12"><h6 class="section-divider mt-2">Datos personales</h6></div>
+
+        <div class="col-md-4">
+          <label class="form-label"><i class="bi bi-card-text me-1"></i>Documento <span class="text-danger">*</span></label>
+          <input type="text" class="form-control" name="documento"
+                 value="{{ form_data.get('documento','') }}"
+                 placeholder="Solo números" maxlength="15" required />
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Nombre <span class="text-danger">*</span></label>
+          <input type="text" class="form-control" name="nombre"
+                 value="{{ form_data.get('nombre','') }}" required />
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Apellido <span class="text-danger">*</span></label>
+          <input type="text" class="form-control" name="apellido"
+                 value="{{ form_data.get('apellido','') }}" required />
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label"><i class="bi bi-telephone me-1"></i>Teléfono</label>
+          <input type="tel" class="form-control" name="telefono"
+                 value="{{ form_data.get('telefono','') }}" placeholder="3101234567" />
+        </div>
+        <div class="col-md-4">
+          <label class="form-label"><i class="bi bi-envelope me-1"></i>Correo</label>
+          <input type="email" class="form-control" name="correo"
+                 value="{{ form_data.get('correo','') }}" placeholder="usuario@correo.com" />
+        </div>
+        <div class="col-md-4">
+          <label class="form-label"><i class="bi bi-hospital me-1"></i>EPS <span class="text-danger">*</span></label>
+          <select class="form-select" name="id_eps" required>
+            <option value="">— Seleccione —</option>
+            {% for e in eps_lista %}
+              <option value="{{ e.id_eps }}"
+                {% if form_data.get('id_eps')|string == e.id_eps|string %}selected{% endif %}>
+                {{ e.nombre }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+      </div>
+
+      <div class="d-flex gap-3 mt-4">
+        <button type="submit" class="btn btn-success-custom btn-lg">
+          <i class="bi bi-person-check me-2"></i>Crear Cuenta
+        </button>
+        <a href="{{ url_for('auth.login') }}" class="btn btn-light btn-lg">
+          <i class="bi bi-arrow-left me-1"></i>Volver
+        </a>
+      </div>
+    </form>
+
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Médicos – Admin{% endblock %}
+{% block content %}
+<div class="container-fluid px-4 py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="page-header mb-0">
+      <div class="page-icon bg-blue-soft"><i class="bi bi-person-badge-fill text-primary"></i></div>
+      <div>
+        <h2 class="page-title">Médicos Registrados</h2>
+        <p class="page-subtitle">{{ medicos|length }} médico(s)</p>
+      </div>
+    </div>
+    <a href="{{ url_for('admin.medico_nuevo') }}" class="btn btn-primary-custom">
+      <i class="bi bi-plus-circle me-2"></i>Nuevo Médico
+    </a>
+  </div>
+
+  <div class="form-card p-0">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Documento</th><th>Nombre</th><th>Especialidad</th>
+            <th>Teléfono</th><th>Usuario</th><th>Estado</th>
+            <th class="text-center">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for m in medicos %}
+          <tr>
+            <td><code>{{ m.documento }}</code></td>
+            <td><strong>{{ m.nombre }} {{ m.apellido }}</strong></td>
+            <td><span class="badge bg-purple-soft text-purple border">{{ m.especialidad }}</span></td>
+            <td>{{ m.telefono }}</td>
+            <td><code>{{ m.username }}</code></td>
+            <td>
+              {% if m.activo %}<span class="badge bg-success">Activo</span>
+              {% else %}<span class="badge bg-secondary">Inactivo</span>{% endif %}
+            </td>
+            <td class="text-center">
+              <a href="{{ url_for('admin.medico_editar', id_medico=m.id_medico) }}"
+                 class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-pencil"></i>
+              </a>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="7" class="text-center py-4 text-muted">Sin médicos registrados.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}EPS – Admin{% endblock %}
+{% block content %}
+<div class="container-fluid px-4 py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="page-header mb-0">
+      <div class="page-icon bg-green-soft"><i class="bi bi-hospital-fill text-success"></i></div>
+      <div>
+        <h2 class="page-title">EPS Registradas</h2>
+        <p class="page-subtitle">{{ eps|length }} entidad(es) en el sistema</p>
+      </div>
+    </div>
+    <a href="{{ url_for('admin.eps_nueva') }}" class="btn btn-primary-custom">
+      <i class="bi bi-plus-circle me-2"></i>Nueva EPS
+    </a>
+  </div>
+
+  <div class="form-card p-0">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="table-light">
+          <tr><th>#</th><th>Nombre</th><th>Estado</th><th class="text-center">Acciones</th></tr>
+        </thead>
+        <tbody>
+          {% for e in eps %}
+          <tr>
+            <td>{{ e.id_eps }}</td>
+            <td><strong>{{ e.nombre }}</strong></td>
+            <td>
+              {% if e.activa %}<span class="badge bg-success">Activa</span>
+              {% else %}<span class="badge bg-secondary">Inactiva</span>{% endif %}
+            </td>
+            <td class="text-center">
+              <a href="{{ url_for('admin.eps_editar', id_eps=e.id_eps) }}"
+                 class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-pencil"></i>
+              </a>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="4" class="text-center py-4 text-muted">Sin registros.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

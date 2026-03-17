@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Especialidades – Admin{% endblock %}
+{% block content %}
+<div class="container-fluid px-4 py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="page-header mb-0">
+      <div class="page-icon bg-purple-soft"><i class="bi bi-clipboard2-pulse-fill text-purple"></i></div>
+      <div>
+        <h2 class="page-title">Especialidades / Tipos de Cita</h2>
+        <p class="page-subtitle">{{ especialidades|length }} especialidad(es)</p>
+      </div>
+    </div>
+    <a href="{{ url_for('admin.especialidad_nueva') }}" class="btn btn-primary-custom">
+      <i class="bi bi-plus-circle me-2"></i>Nueva Especialidad
+    </a>
+  </div>
+
+  <div class="form-card p-0">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="table-light">
+          <tr><th>#</th><th>Nombre</th><th>Duración (min)</th><th>Estado</th><th class="text-center">Acciones</th></tr>
+        </thead>
+        <tbody>
+          {% for e in especialidades %}
+          <tr>
+            <td>{{ e.id_especialidad }}</td>
+            <td><strong>{{ e.nombre }}</strong></td>
+            <td><span class="badge bg-light text-dark border">{{ e.duracion_min }} min</span></td>
+            <td>
+              {% if e.activa %}<span class="badge bg-success">Activa</span>
+              {% else %}<span class="badge bg-secondary">Inactiva</span>{% endif %}
+            </td>
+            <td class="text-center">
+              <a href="{{ url_for('admin.especialidad_editar', id_esp=e.id_especialidad) }}"
+                 class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-pencil"></i>
+              </a>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5" class="text-center py-4 text-muted">Sin registros.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

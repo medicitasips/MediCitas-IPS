@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block title %}Modificar Cita – MediCitas{% endblock %}
+{% block content %}
+<div class="container-fluid px-4 py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-7">
+
+      <div class="page-header mb-4">
+        <div class="page-icon bg-orange-soft"><i class="bi bi-pencil-square text-warning"></i></div>
+        <div>
+          <h2 class="page-title">Modificar Cita #{{ cita.id_cita }}</h2>
+          <p class="page-subtitle">Dr(a). {{ cita.med_nombre }} {{ cita.med_apellido }} &mdash; {{ cita.especialidad }}</p>
+        </div>
+      </div>
+
+      <div class="form-card">
+        <form method="POST" novalidate>
+          <div class="row g-3">
+
+            <div class="col-md-6">
+              <label class="form-label">Especialidad <span class="text-danger">*</span></label>
+              <select class="form-select" name="id_especialidad" id="id_especialidad" required>
+                {% for e in especialidades %}
+                  <option value="{{ e.id_especialidad }}"
+                    {% if e.id_especialidad == cita.id_especialidad %}selected{% endif %}
+                    data-duracion="{{ e.duracion_min }}">
+                    {{ e.nombre }} ({{ e.duracion_min }} min)
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">Médico <span class="text-danger">*</span></label>
+              <select class="form-select" name="id_medico" id="id_medico" required>
+                {% for m in medicos %}
+                  <option value="{{ m.id_medico }}"
+                    {% if m.id_medico == cita.id_medico %}selected{% endif %}>
+                    {{ m.nombre_completo }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">EPS <span class="text-danger">*</span></label>
+              <select class="form-select" name="id_eps" required>
+                {% for e in eps_lista %}
+                  <option value="{{ e.id_eps }}"
+                    {% if e.id_eps == cita.id_eps %}selected{% endif %}>
+                    {{ e.nombre }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="col-md-3">
+              <label class="form-label">Fecha <span class="text-danger">*</span></label>
+              <input type="date" class="form-control" name="fecha"
+                     value="{{ cita.fecha }}" required />
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Hora inicio <span class="text-danger">*</span></label>
+              <input type="time" class="form-control" name="hora_inicio"
+                     id="hora_inicio"
+                     value="{{ cita.hora_inicio }}" step="900" required />
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label text-muted">Hora estimada de fin</label>
+              <input type="text" class="form-control bg-light" id="hora_fin_display" readonly
+                     value="{{ cita.hora_fin }}" />
+            </div>
+
+            <div class="col-12">
+              <label class="form-label">Motivo</label>
+              <textarea class="form-control" name="motivo" rows="2">{{ cita.motivo or '' }}</textarea>
+            </div>
+
+          </div>
+
+          <div class="d-flex gap-3 mt-4">
+            <button type="submit" class="btn btn-warning-custom">
+              <i class="bi bi-check-circle me-2"></i>Guardar Cambios
+            </button>
+            <a href="{{ url_for('paciente.dashboard') }}" class="btn btn-light">
+              <i class="bi bi-arrow-left me-1"></i>Volver
+            </a>
+          </div>
+        </form>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const selectEsp   = document.getElementById("id_especialidad");
+const horaInicio  = document.getElementById("hora_inicio");
+const horaFinDisp = document.getElementById("hora_fin_display");
+let duracionActual = parseInt(selectEsp.options[selectEsp.selectedIndex]?.dataset.duracion || 30);
+
+selectEsp.addEventListener("change", () => {
+  duracionActual = parseInt(selectEsp.options[selectEsp.selectedIndex].dataset.duracion || 30);
+  actualizarHoraFin();
+});
+horaInicio.addEventListener("change", actualizarHoraFin);
+
+function actualizarHoraFin() {
+  const hora = horaInicio.value;
+  if (!hora) return;
+  const [h, m] = hora.split(":").map(Number);
+  const total  = h * 60 + m + duracionActual;
+  horaFinDisp.value = `${String(Math.floor(total/60)%24).padStart(2,"0")}:${String(total%60).padStart(2,"0")}`;
+}
+</script>
+{% endblock %}

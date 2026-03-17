@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+{% block title %}Reservar Cita – MediCitas{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-7">
+
+      <div class="page-header mb-4">
+        <div class="page-icon bg-green-soft"><i class="bi bi-calendar-plus-fill text-success"></i></div>
+        <div>
+          <h2 class="page-title">Reservar Cita Médica</h2>
+          <p class="page-subtitle">{{ perfil.nombre }} {{ perfil.apellido }}</p>
+        </div>
+      </div>
+
+      <!-- Alerta de cruce de horario -->
+      {% if cruce %}
+      <div class="alert alert-danger border-0 shadow-sm mb-4">
+        <h6 class="alert-heading"><i class="bi bi-exclamation-triangle-fill me-2"></i>Conflicto de horario detectado</h6>
+        <p class="mb-2">El horario solicitado se cruza con las siguientes citas:</p>
+        <ul class="mb-0">
+          {% for col in cruce %}
+          <li>
+            <strong>{{ col.hora_inicio }} – {{ col.hora_fin }}</strong>
+            {% if col.get('pac_nombre') %}— Paciente: {{ col.pac_nombre }} {{ col.pac_apellido }}{% endif %}
+            {% if col.get('med_nombre') %}— Médico: {{ col.med_nombre }} {{ col.med_apellido }}{% endif %}
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+
+      <div class="form-card">
+        <form method="POST" action="{{ url_for('paciente.reservar') }}" id="formReserva" novalidate>
+
+          <div class="row g-3">
+
+            <!-- Especialidad -->
+            <div class="col-md-6">
+              <label class="form-label">
+                <i class="bi bi-clipboard2-pulse me-1"></i>Especialidad <span class="text-danger">*</span>
+              </label>
+              <select class="form-select" id="id_especialidad" name="id_especialidad" required>
+                <option value="">— Seleccione —</option>
+                {% for e in especialidades %}
+                  <option value="{{ e.id_especialidad }}"
+                    {% if form_data.get('id_especialidad')|string == e.id_especialidad|string %}selected{% endif %}
+                    data-duracion="{{ e.duracion_min }}">
+                    {{ e.nombre }} ({{ e.duracion_min }} min)
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <!-- Médico (se carga dinámicamente) -->
+            <div class="col-md-6">
+              <label class="form-label">
+                <i class="bi bi-person-badge me-1"></i>Médico <span class="text-danger">*</span>
+              </label>
+              <select class="form-select" id="id_medico" name="id_medico" required>
+                <option value="">— Primero seleccione especialidad —</option>
+                {% if form_data.get('id_medico') %}
+                  <option value="{{ form_data.get('id_medico') }}" selected>
+                    Médico seleccionado anteriormente
+                  </option>
+                {% endif %}
+              </select>
+              <div class="form-text" id="medicoHelp"></div>
+            </div>
+
+            <!-- EPS -->
+            <div class="col-md-6">
+              <label class="form-label">
+                <i class="bi bi-hospital me-1"></i>EPS <span class="text-danger">*</span>
+              </label>
+              <select class="form-select" name="id_eps" required>
+                <option value="">— Seleccione EPS —</option>
+                {% for e in eps_lista %}
+                  <option value="{{ e.id_eps }}"
+                    {% if form_data.get('id_eps')|string == e.id_eps|string
+                       or perfil.id_eps == e.id_eps %}selected{% endif %}>
+                    {{ e.nombre }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <!-- Fecha -->
+            <div class="col-md-3">
+              <label class="form-label"><i class="bi bi-calendar-date me-1"></i>Fecha <span class="text-danger">*</span></label>
+              <input type="date" class="form-control" name="fecha"
+                     value="{{ form_data.get('fecha','') }}" required />
+            </div>
+
+            <!-- Hora inicio -->
+            <div class="col-md-3">
+              <label class="form-label"><i class="bi bi-clock me-1"></i>Hora inicio <span class="text-danger">*</span></label>
+              <input type="time" class="form-control" name="hora_inicio"
+                     id="hora_inicio"
+                     value="{{ form_data.get('hora_inicio','') }}"
+                     step="900" required />
+            </div>
+
+            <!-- Hora fin calculada (solo lectura) -->
+            <div class="col-md-6">
+              <label class="form-label text-muted"><i class="bi bi-clock-history me-1"></i>Hora estimada de fin</label>
+              <input type="text" class="form-control bg-light" id="hora_fin_display"
+                     readonly placeholder="Se calcula automáticamente" />
+            </div>
+
+            <!-- Motivo -->
+            <div class="col-12">
+              <label class="form-label"><i class="bi bi-chat-text me-1"></i>Motivo de la consulta</label>
+              <textarea class="form-control" name="motivo" rows="2"
+                        placeholder="Describa brevemente el motivo de la cita (opcional)">{{ form_data.get('motivo','') }}</textarea>
+            </div>
+
+          </div>
+
+          <div class="d-flex gap-3 mt-4">
+            <button type="submit" class="btn btn-success-custom">
+              <i class="bi bi-calendar-check me-2"></i>Confirmar Reserva
+            </button>
+            <a href="{{ url_for('paciente.dashboard') }}" class="btn btn-light">
+              <i class="bi bi-arrow-left me-1"></i>Cancelar
+            </a>
+          </div>
+
+        </form>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ── Cargar médicos dinámicamente según especialidad ────────────
+const selectEsp   = document.getElementById("id_especialidad");
+const selectMed   = document.getElementById("id_medico");
+const horaInicio  = document.getElementById("hora_inicio");
+const horaFinDisp = document.getElementById("hora_fin_display");
+const medicoHelp  = document.getElementById("medicoHelp");
+
+let duracionActual = 30;
+
+selectEsp.addEventListener("change", async () => {
+  const idEsp = selectEsp.value;
+  const opt   = selectEsp.options[selectEsp.selectedIndex];
+  duracionActual = parseInt(opt.dataset.duracion || 30);
+  actualizarHoraFin();
+
+  selectMed.innerHTML = '<option value="">Cargando...</option>';
+  medicoHelp.textContent = "";
+
+  if (!idEsp) {
+    selectMed.innerHTML = '<option value="">— Primero seleccione especialidad —</option>';
+    return;
+  }
+
+  try {
+    const res  = await fetch(`/paciente/api/medicos/${idEsp}`);
+    const data = await res.json();
+
+    if (data.length === 0) {
+      selectMed.innerHTML = '<option value="">Sin médicos disponibles</option>';
+      medicoHelp.textContent = "No hay médicos activos para esta especialidad.";
+    } else {
+      selectMed.innerHTML = '<option value="">— Seleccione médico —</option>';
+      data.forEach(m => {
+        selectMed.innerHTML += `<option value="${m.id_medico}">${m.nombre_completo}</option>`;
+      });
+      medicoHelp.textContent = `${data.length} médico(s) disponible(s)`;
+    }
+  } catch (e) {
+    selectMed.innerHTML = '<option value="">Error al cargar médicos</option>';
+  }
+});
+
+// ── Calcular hora fin visualmente ─────────────────────────────
+horaInicio.addEventListener("change", actualizarHoraFin);
+
+function actualizarHoraFin() {
+  const hora = horaInicio.value;
+  if (!hora) { horaFinDisp.value = ""; return; }
+  const [h, m] = hora.split(":").map(Number);
+  const total  = h * 60 + m + duracionActual;
+  const hf = String(Math.floor(total / 60) % 24).padStart(2,"0");
+  const mf = String(total % 60).padStart(2,"0");
+  horaFinDisp.value = `${hf}:${mf}`;
+}
+</script>
+{% endblock %}

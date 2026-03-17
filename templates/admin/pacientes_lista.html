@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Pacientes – Admin{% endblock %}
+{% block content %}
+<div class="container-fluid px-4 py-4">
+  <div class="page-header mb-4">
+    <div class="page-icon bg-green-soft"><i class="bi bi-people-fill text-success"></i></div>
+    <div>
+      <h2 class="page-title">Pacientes Registrados</h2>
+      <p class="page-subtitle">{{ pacientes|length }} paciente(s)</p>
+    </div>
+  </div>
+
+  <div class="form-card p-0">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="table-light">
+          <tr><th>Documento</th><th>Nombre</th><th>Teléfono</th><th>Correo</th><th>EPS</th></tr>
+        </thead>
+        <tbody>
+          {% for p in pacientes %}
+          <tr>
+            <td><code>{{ p.documento }}</code></td>
+            <td><strong>{{ p.nombre }} {{ p.apellido }}</strong></td>
+            <td>{{ p.telefono }}</td>
+            <td>{{ p.correo }}</td>
+            <td><span class="badge bg-light text-dark border">{{ p.eps_nombre }}</span></td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5" class="text-center py-4 text-muted">Sin pacientes.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
