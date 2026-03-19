@@ -31,12 +31,6 @@ def _calcular_hora_fin(hora_inicio: str, duracion_min: int) -> str:
 def verificar_cruce_medico(id_medico: int, fecha: str,
                             hora_inicio: str, hora_fin: str,
                             excluir_id_cita: int = None) -> list[dict]:
-    """
-    Retorna las citas activas del médico que se cruzan con el
-    intervalo [hora_inicio, hora_fin] en la fecha dada.
-
-    Si excluir_id_cita se indica (edición), esa cita no cuenta.
-    """
     excluye = "AND c.id_cita != %s" if excluir_id_cita else ""
     sql = f"""
         SELECT c.id_cita, c.hora_inicio, c.hora_fin,
@@ -53,7 +47,6 @@ def verificar_cruce_medico(id_medico: int, fecha: str,
     params = [id_medico, fecha, hora_inicio, hora_fin]
     if excluir_id_cita:
         params.append(excluir_id_cita)
-
     conn = None
     try:
         conn = get_connection()
@@ -67,10 +60,6 @@ def verificar_cruce_medico(id_medico: int, fecha: str,
 def verificar_cruce_paciente(id_paciente: int, fecha: str,
                               hora_inicio: str, hora_fin: str,
                               excluir_id_cita: int = None) -> list[dict]:
-    """
-    Verifica que el paciente no tenga otra cita activa en el mismo
-    intervalo de tiempo (en cualquier médico / especialidad).
-    """
     excluye = "AND c.id_cita != %s" if excluir_id_cita else ""
     sql = f"""
         SELECT c.id_cita, c.hora_inicio, c.hora_fin,
@@ -87,7 +76,6 @@ def verificar_cruce_paciente(id_paciente: int, fecha: str,
     params = [id_paciente, fecha, hora_inicio, hora_fin]
     if excluir_id_cita:
         params.append(excluir_id_cita)
-
     conn = None
     try:
         conn = get_connection()
@@ -105,32 +93,15 @@ def verificar_cruce_paciente(id_paciente: int, fecha: str,
 def crear_cita(id_paciente: int, id_medico: int, id_especialidad: int,
                id_eps: int, fecha: str, hora_inicio: str,
                duracion_min: int, motivo: str = "") -> dict:
-    """
-    Crea una cita si no hay conflicto de horario.
-
-    Retorna:
-        {'ok': True,  'id': int}
-        {'ok': False, 'error': str, 'cruce': list}   ← si hay conflicto
-    """
     hora_fin = _calcular_hora_fin(hora_inicio, duracion_min)
 
-    # ── Verificar cruce del médico ──
     cruces_med = verificar_cruce_medico(id_medico, fecha, hora_inicio, hora_fin)
     if cruces_med:
-        return {
-            "ok": False,
-            "error": "El médico ya tiene una cita en ese horario.",
-            "cruce": cruces_med,
-        }
+        return {"ok": False, "error": "El médico ya tiene una cita en ese horario.", "cruce": cruces_med}
 
-    # ── Verificar cruce del paciente ──
     cruces_pac = verificar_cruce_paciente(id_paciente, fecha, hora_inicio, hora_fin)
     if cruces_pac:
-        return {
-            "ok": False,
-            "error": "El paciente ya tiene una cita activa en ese horario.",
-            "cruce": cruces_pac,
-        }
+        return {"ok": False, "error": "El paciente ya tiene una cita activa en ese horario.", "cruce": cruces_pac}
 
     sql = """
         INSERT INTO citas
@@ -266,10 +237,6 @@ def actualizar_cita(id_cita: int, id_medico: int, id_especialidad: int,
                     id_eps: int, fecha: str, hora_inicio: str,
                     duracion_min: int, motivo: str,
                     id_paciente: int) -> dict:
-    """
-    Actualiza una cita verificando que el nuevo horario no genere cruce.
-    Excluye la propia cita de la verificación de cruce.
-    """
     hora_fin = _calcular_hora_fin(hora_inicio, duracion_min)
 
     cruces_med = verificar_cruce_medico(id_medico, fecha, hora_inicio,
@@ -316,3 +283,151 @@ def cambiar_estado_cita(id_cita: int, estado: str) -> dict:
         return {"ok": False, "error": str(e)}
     finally:
         if conn and conn.is_connected(): cur.close(); conn.close()
+
+
+# ══════════════════════════════════════════════════════════════
+#  DISPONIBILIDAD – calendario visual
+# ══════════════════════════════════════════════════════════════
+
+def disponibilidad_mes(id_medico: int, anio: int, mes: int,
+                       duracion_min: int) -> dict:
+    """
+    Calcula la disponibilidad de un médico para todo un mes.
+    Retorna {fecha_iso: estado} donde estado es:
+        'disponible' | 'lleno' | 'pasado' | 'bloqueado'
+    Horario laboral 08:00–17:00. Domingos bloqueados.
+    """
+    import calendar
+    from datetime import date
+
+    hoy = date.today()
+    _, num_dias = calendar.monthrange(anio, mes)
+
+    sql = """
+        SELECT DATE_FORMAT(fecha, '%%Y-%%m-%%d') AS fecha,
+               hora_inicio, hora_fin
+        FROM citas
+        WHERE id_medico = %s
+          AND YEAR(fecha)  = %s
+          AND MONTH(fecha) = %s
+          AND estado = 'Activa'
+        ORDER BY fecha, hora_inicio
+    """
+    conn = None
+    try:
+        conn = get_connection()
+        cur  = conn.cursor(dictionary=True)
+        cur.execute(sql, (id_medico, anio, mes))
+        citas_mes = cur.fetchall()
+    finally:
+        if conn and conn.is_connected(): cur.close(); conn.close()
+
+    citas_por_fecha: dict[str, list] = {}
+    for c in citas_mes:
+        fd = c["fecha"]
+        if fd not in citas_por_fecha:
+            citas_por_fecha[fd] = []
+        citas_por_fecha[fd].append({
+            "inicio": _str_to_min(str(c["hora_inicio"])),
+            "fin":    _str_to_min(str(c["hora_fin"])),
+        })
+
+    resultado = {}
+    for dia in range(1, num_dias + 1):
+        fecha     = date(anio, mes, dia)
+        fecha_iso = fecha.isoformat()
+
+        if fecha.weekday() == 6:          # domingo
+            resultado[fecha_iso] = "bloqueado"
+            continue
+        if fecha < hoy:
+            resultado[fecha_iso] = "pasado"
+            continue
+
+        slots    = _generar_slots(duracion_min)
+        citas_dia = citas_por_fecha.get(fecha_iso, [])
+        hay_libre = False
+
+        for slot_inicio in slots:
+            slot_fin = slot_inicio + duracion_min
+            solapado = any(
+                slot_inicio < c["fin"] and slot_fin > c["inicio"]
+                for c in citas_dia
+            )
+            if not solapado:
+                hay_libre = True
+                break
+
+        resultado[fecha_iso] = "disponible" if hay_libre else "lleno"
+
+    return resultado
+
+
+def slots_disponibles_dia(id_medico: int, fecha: str,
+                          duracion_min: int) -> list[str]:
+    """
+    Retorna horas de inicio disponibles para un médico en una fecha.
+    Formato: ['08:00', '08:30', ...]
+    """
+    from datetime import date as date_cls
+
+    if fecha < date_cls.today().isoformat():
+        return []
+
+    sql = """
+        SELECT hora_inicio, hora_fin
+        FROM citas
+        WHERE id_medico = %s AND fecha = %s AND estado = 'Activa'
+    """
+    conn = None
+    try:
+        conn = get_connection()
+        cur  = conn.cursor(dictionary=True)
+        cur.execute(sql, (id_medico, fecha))
+        citas = [
+            {
+                "inicio": _str_to_min(str(c["hora_inicio"])),
+                "fin":    _str_to_min(str(c["hora_fin"])),
+            }
+            for c in cur.fetchall()
+        ]
+    finally:
+        if conn and conn.is_connected(): cur.close(); conn.close()
+
+    slots       = _generar_slots(duracion_min)
+    disponibles = []
+
+    for slot_inicio in slots:
+        slot_fin = slot_inicio + duracion_min
+        if slot_fin > 17 * 60:
+            continue
+        solapado = any(
+            slot_inicio < c["fin"] and slot_fin > c["inicio"]
+            for c in citas
+        )
+        if not solapado:
+            h = slot_inicio // 60
+            m = slot_inicio % 60
+            disponibles.append(f"{h:02d}:{m:02d}")
+
+    return disponibles
+
+
+# ── Helpers privados ──────────────────────────────────────────
+
+def _str_to_min(valor: str) -> int:
+    """Convierte 'HH:MM:SS' o timedelta string a minutos totales."""
+    if "day" in str(valor):
+        partes = str(valor).replace("day, ", "days,").split("days,")
+        tiempo = partes[-1].strip()
+    else:
+        tiempo = str(valor)
+    partes_t = tiempo.split(":")
+    h = int(partes_t[0])
+    m = int(partes_t[1]) if len(partes_t) > 1 else 0
+    return h * 60 + m
+
+
+def _generar_slots(duracion_min: int) -> list[int]:
+    """Slots de 08:00 a 17:00 con paso duracion_min (en minutos absolutos)."""
+    return list(range(8 * 60, 17 * 60, duracion_min))
