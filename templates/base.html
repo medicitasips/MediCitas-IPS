@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>{% block title %}MediCitas IPS{% endblock %}</title>
+  <title>{% block title %}MediCitas EPS{% endblock %}</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet"/>
@@ -17,7 +17,7 @@
   <div class="container-fluid px-4">
     <a class="navbar-brand d-flex align-items-center gap-2" href="{{ url_for('index') }}">
       <span class="brand-icon"><i class="bi bi-heart-pulse-fill"></i></span>
-      <span class="brand-text">Medi<strong>Citas IPS</strong></span>
+      <span class="brand-text">Medi<strong>Citas</strong></span>
     </a>
     <button class="navbar-toggler border-0" type="button"
             data-bs-toggle="collapse" data-bs-target="#navContent">
@@ -128,7 +128,7 @@
   <div class="container-fluid px-4 text-center">
     <small class="text-muted">
       <i class="bi bi-heart-pulse-fill text-danger me-1"></i>
-      <strong>MediCitas IPS</strong> &bull; ADSO19 – SENA &copy; 2025
+      <strong>MediCitas EPS</strong> &bull; ADSO19 – SENA &copy; 2025
     </small>
   </div>
 </footer>
@@ -137,11 +137,11 @@
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 {% block scripts %}{% endblock %}
 
-<!-- ══════════════════  CHATBOT WIDGET (solo página principal) ══════════════════ -->
-{% if request.path == '/' %}
+{% if request.endpoint == 'index' %}
+<!-- ══════  CHATBOT WIDGET  ══════ -->
 <link rel="stylesheet" href="{{ url_for('static', filename='css/chatbot.css') }}" />
 
-<button id="cb-fab" aria-label="Abrir chatbot de agendamiento">
+<button id="cb-fab" aria-label="Abrir chatbot">
   <i class="bi bi-chat-heart-fill"></i>
   <span class="cb-fab-badge"></span>
 </button>
@@ -153,11 +153,8 @@
       <strong>Asistente MediCitas</strong>
       <span>Agendamiento de citas</span>
     </div>
-    <button id="cb-close" aria-label="Cerrar chat">
-      <i class="bi bi-x-lg"></i>
-    </button>
+    <button id="cb-close" aria-label="Cerrar"><i class="bi bi-x-lg"></i></button>
   </div>
-
   <div id="cb-progress">
     <span class="cb-step-dot active"></span>
     <span class="cb-step-dot"></span>
@@ -170,7 +167,6 @@
     <span class="cb-step-dot"></span>
     <span id="cb-progress-label">Inicio</span>
   </div>
-
   <div id="cb-messages" aria-live="polite"></div>
   <div id="cb-footer"></div>
 </div>
