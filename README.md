@@ -171,7 +171,7 @@ MYSQL_HOST      = (desde Railway MySQL)
 MYSQL_PORT      = (desde Railway MySQL)
 MYSQL_USER      = (desde Railway MySQL)
 MYSQL_PASSWORD  = (desde Railway MySQL)
-MYSQL_DB        = eps_citas
+MYSQL_DB        = railway
 ```
 
 Railway detecta `requirements.txt` e instala dependencias automáticamente.  
