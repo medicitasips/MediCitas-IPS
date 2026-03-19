@@ -11,8 +11,10 @@ from flask import (Blueprint, render_template, request,
 from routes.decoradores    import login_required, rol_requerido
 from models.catalogo_model import obtener_medico_por_usuario
 from models.cita_model     import (citas_por_medico, obtener_cita_por_id,
-                                    cambiar_estado_cita, horario_del_dia)
+                                    cambiar_estado_cita, horario_del_dia,
+                                    historial_paciente)
 from models.nota_model     import crear_nota, obtener_nota_por_cita
+from models.paciente_model import obtener_paciente_por_usuario
 
 medico_bp = Blueprint("medico", __name__, url_prefix="/medico")
 
@@ -121,3 +123,32 @@ def horario():
                            perfil=perfil,
                            citas=citas,
                            fecha=fecha)
+
+
+# ── Historial médico de un paciente ───────────────────────────
+
+@medico_bp.route("/paciente/<int:id_paciente>/historial")
+@login_required
+@rol_requerido("medico")
+def historial_paciente_view(id_paciente):
+    """
+    Vista consolidada del historial clínico de un paciente.
+    Solo accesible por médicos. Muestra todas las consultas
+    completadas con sus notas (si existen).
+    """
+    perfil_medico = obtener_medico_por_usuario(session["id_usuario"])
+
+    # Obtener datos del paciente desde cualquier cita
+    from models.paciente_model import obtener_paciente_por_id
+    paciente = obtener_paciente_por_id(id_paciente)
+
+    if not paciente:
+        flash("Paciente no encontrado.", "danger")
+        return redirect(url_for("medico.dashboard"))
+
+    historial = historial_paciente(id_paciente)
+
+    return render_template("medico/historial_paciente.html",
+                           perfil=perfil_medico,
+                           paciente=paciente,
+                           historial=historial)
