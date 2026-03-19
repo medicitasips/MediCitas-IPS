@@ -24,6 +24,10 @@ def login():
     if "id_usuario" in session:
         return redirect(_redirect_por_rol(session["rol"]))
 
+    # Mensaje cuando la sesión se cierra por inactividad o cierre de pestaña
+    if request.args.get("timeout"):
+        flash("Tu sesión se cerró automáticamente por inactividad o cierre del navegador.", "warning")
+
     if request.method == "POST":
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "").strip()
@@ -51,6 +55,20 @@ def logout():
     session.clear()
     flash("Sesión cerrada correctamente.", "info")
     return redirect(url_for("auth.login"))
+
+
+@auth_bp.route("/logout/silencioso", methods=["POST"])
+def logout_silencioso():
+    """
+    Endpoint para cierre de sesión automático desde JavaScript.
+    Usado por:
+      - sendBeacon() al cerrar la pestaña/navegador
+      - fetch() al detectar inactividad prolongada
+    Retorna 204 (No Content) para mínimo overhead.
+    """
+    session.clear()
+    from flask import Response
+    return Response(status=204)
 
 
 # ── Registro de paciente ──────────────────────────────────────
