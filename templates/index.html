@@ -137,44 +137,6 @@
   </div>
 </section>
 
-<!-- ══════════════════  CHATBOT WIDGET  ══════════════════ -->
-
-<button id="cb-fab" aria-label="Abrir chatbot de agendamiento">
-  <i class="bi bi-chat-heart-fill"></i>
-  <span class="cb-fab-badge"></span>
-</button>
-
-<div id="cb-window" role="dialog" aria-label="Asistente de agendamiento">
-
-  <div id="cb-header">
-    <div class="cb-avatar">🏥</div>
-    <div class="cb-title">
-      <strong>Asistente MediCitas</strong>
-      <span>Agendamiento de citas</span>
-    </div>
-    <button id="cb-close" aria-label="Cerrar chat">
-      <i class="bi bi-x-lg"></i>
-    </button>
-  </div>
-
-  <div id="cb-progress">
-    <span class="cb-step-dot active"></span>
-    <span class="cb-step-dot"></span>
-    <span class="cb-step-dot"></span>
-    <span class="cb-step-dot"></span>
-    <span class="cb-step-dot"></span>
-    <span class="cb-step-dot"></span>
-    <span class="cb-step-dot"></span>
-    <span class="cb-step-dot"></span>
-    <span class="cb-step-dot"></span>
-    <span id="cb-progress-label">Inicio</span>
-  </div>
-
-  <div id="cb-messages" aria-live="polite"></div>
-  <div id="cb-footer"></div>
-
-</div>
-
 {% endblock %}
 
 {% block scripts %}
