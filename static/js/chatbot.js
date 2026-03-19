@@ -398,73 +398,288 @@ document.addEventListener("DOMContentLoaded", function () {
     })));
   }
 
-  // PASO 6 – Elegir fecha
+  // PASO 6 – Calendario de disponibilidad mensual
   function askFecha() {
     updateProgress(6);
-    botMsg("📅 ¿Qué <strong>fecha</strong> prefieres para la cita?");
-    footer.innerHTML = `
-      <div class="cb-input-row">
-        <input id="cb-inp-fecha" class="cb-input" type="date"
-               min="${todayISO()}" value="${todayISO()}" />
-        <button class="cb-send-btn" id="cb-btn-fecha">
-          <i class="bi bi-arrow-right"></i>
-        </button>
-      </div>`;
-    const inp = document.getElementById("cb-inp-fecha");
-    const btn = document.getElementById("cb-btn-fecha");
+    botMsg("📅 Selecciona la <strong>fecha</strong> de tu cita en el calendario:");
+    clearFooter();
 
-    const submit = () => {
-      const val = inp.value;
-      if (!val) return;
-      state.fecha = val;
-      userMsg(formatFecha(val));
-      clearFooter();
-      askHora();
-    };
-    btn.addEventListener("click", submit);
-    inp.addEventListener("keydown", e => { if (e.key === "Enter") submit(); });
-  }
+    // Estado del calendario
+    const hoy      = new Date(); hoy.setHours(0,0,0,0);
+    const hoyISO2  = hoy.toISOString().split("T")[0];
+    let mesVista   = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+    let dispCache  = {};
 
-  // PASO 7 – Elegir hora
-  function askHora() {
-    updateProgress(7);
-    const hFin = calcHoraFin("__:__", state.especialidad.duracion_min);
-    botMsg(`🕐 ¿A qué <strong>hora</strong> deseas la cita?<br><small style="color:#6b7280">La consulta dura <strong>${state.especialidad.duracion_min} minutos</strong>. La hora de fin se calcula automáticamente.</small>`);
-    footer.innerHTML = `
-      <div class="cb-input-row">
-        <input id="cb-inp-hora" class="cb-input" type="time"
-               step="900" value="08:00" />
-        <button class="cb-send-btn" id="cb-btn-hora">
-          <i class="bi bi-arrow-right"></i>
-        </button>
-      </div>
-      <div id="cb-hora-fin-preview" style="font-size:.75rem;color:#6b7280;margin-top:4px;text-align:right;padding-right:4px"></div>`;
-    const inp     = document.getElementById("cb-inp-hora");
-    const btn     = document.getElementById("cb-btn-hora");
-    const preview = document.getElementById("cb-hora-fin-preview");
+    // ── Construir el widget de calendario en el área de mensajes ──
+    const calDiv = document.createElement("div");
+    calDiv.id = "cb-calendario";
+    calDiv.style.cssText = `
+      margin: 4px 4px 4px 36px;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 12px;
+      animation: cb-slide-in .25s ease;
+      max-width: 310px;
+    `;
+    calDiv.innerHTML = buildCalHTML();
+    messages.appendChild(calDiv);
+    scrollBottom();
 
-    const updatePreview = () => {
-      if (inp.value) {
-        const fin = calcHoraFin(inp.value, state.especialidad.duracion_min);
-        preview.textContent = `Hora de fin estimada: ${fin}`;
+    // Renderizar primer mes
+    renderMes();
+
+    // ── Helpers del calendario ────────────────────────────────────
+
+    function buildCalHTML() {
+      return `
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <button id="cb-cal-prev" style="${btnNavStyle()}" title="Mes anterior">&#8249;</button>
+          <span id="cb-cal-title" style="font-family:'DM Serif Display',serif;font-size:1rem;color:#111827"></span>
+          <button id="cb-cal-next" style="${btnNavStyle()}" title="Mes siguiente">&#8250;</button>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;font-size:.7rem;color:#9ca3af">
+          <span>🟢 Disponible</span>
+          <span>🔴 Sin horarios</span>
+          <span>⚫ Pasado</span>
+        </div>
+        <div id="cb-cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px"></div>
+        <div id="cb-slots-area" style="margin-top:10px"></div>
+      `;
+    }
+
+    function btnNavStyle() {
+      return `width:28px;height:28px;border-radius:7px;border:1.5px solid #e5e7eb;
+              background:#fff;color:#4b5563;cursor:pointer;font-size:1.1rem;
+              display:inline-flex;align-items:center;justify-content:center;
+              font-family:sans-serif;line-height:1;`;
+    }
+
+    // Adjuntar eventos de navegación
+    setTimeout(() => {
+      document.getElementById("cb-cal-prev")?.addEventListener("click", () => {
+        const ant = new Date(mesVista.getFullYear(), mesVista.getMonth() - 1, 1);
+        if (ant < new Date(hoy.getFullYear(), hoy.getMonth(), 1)) return;
+        mesVista = ant;
+        renderMes();
+      });
+      document.getElementById("cb-cal-next")?.addEventListener("click", () => {
+        mesVista = new Date(mesVista.getFullYear(), mesVista.getMonth() + 1, 1);
+        renderMes();
+      });
+    }, 50);
+
+    async function renderMes() {
+      const anio  = mesVista.getFullYear();
+      const mes   = mesVista.getMonth() + 1;
+      const clave = `${anio}-${String(mes).padStart(2,"0")}`;
+
+      // Título
+      const tit = document.getElementById("cb-cal-title");
+      if (tit) {
+        tit.textContent = mesVista.toLocaleDateString("es-CO", { month:"long", year:"numeric" });
+        tit.style.textTransform = "capitalize";
       }
-    };
-    inp.addEventListener("change", updatePreview);
-    inp.addEventListener("input",  updatePreview);
-    updatePreview();
 
-    const submit = () => {
-      const val = inp.value;
-      if (!val) return;
-      state.hora_inicio = val;
-      state.hora_fin    = calcHoraFin(val, state.especialidad.duracion_min);
-      userMsg(`${val} (fin: ${state.hora_fin})`);
+      // Deshabilitar prev si es mes actual
+      const prev = document.getElementById("cb-cal-prev");
+      if (prev) prev.disabled = mesVista <= new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+
+      const grid = document.getElementById("cb-cal-grid");
+      if (!grid) return;
+
+      // Encabezados días
+      const dias = ["D","L","M","M","J","V","S"];
+      let html = dias.map(d =>
+        `<div style="text-align:center;font-size:.65rem;font-weight:700;color:#9ca3af;padding:2px 0">${d}</div>`
+      ).join("");
+
+      const primerDia = new Date(anio, mes - 1, 1).getDay();
+      const numDias   = new Date(anio, mes, 0).getDate();
+
+      for (let i = 0; i < primerDia; i++) html += `<div></div>`;
+      for (let d = 1; d <= numDias; d++) {
+        const fecha = `${anio}-${String(mes).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+        const esHoy = fecha === hoyISO2;
+        html += `<div class="cb-cal-day" data-fecha="${fecha}"
+                  style="${skeletonStyle(esHoy)}">${d}</div>`;
+      }
+      grid.innerHTML = html;
+
+      // Limpiar slots al cambiar mes
+      const slotsArea = document.getElementById("cb-slots-area");
+      if (slotsArea) slotsArea.innerHTML = "";
+
+      // Cargar disponibilidad
+      if (!dispCache[clave]) {
+        try {
+          const url  = `/paciente/api/disponibilidad/${state.medico.id}/${anio}/${mes}?duracion=${state.especialidad.duracion_min}`;
+          const res  = await fetch(url);
+          dispCache[clave] = await res.json();
+        } catch { return; }
+      }
+
+      aplicarEstados(dispCache[clave]);
+    }
+
+    function skeletonStyle(esHoy) {
+      return `aspect-ratio:1;border-radius:7px;display:flex;align-items:center;
+              justify-content:center;font-size:.78rem;font-weight:600;
+              font-family:'Plus Jakarta Sans',sans-serif;cursor:wait;
+              background:linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%);
+              background-size:200% 100%;animation:shimmerCal 1.2s infinite;color:transparent;
+              ${esHoy ? "outline:2px solid #1a6cf6;outline-offset:1px;" : ""}`;
+    }
+
+    function aplicarEstados(data) {
+      document.querySelectorAll(".cb-cal-day").forEach(el => {
+        const fecha  = el.dataset.fecha;
+        const estado = data[fecha] || "pasado";
+        let style    = `aspect-ratio:1;border-radius:7px;display:flex;align-items:center;
+                        justify-content:center;font-size:.78rem;font-weight:600;
+                        font-family:'Plus Jakarta Sans',sans-serif;`;
+
+        const esHoy = fecha === hoyISO2;
+        if (esHoy) style += "outline:2px solid #1a6cf6;outline-offset:1px;font-weight:800;";
+
+        if (estado === "disponible") {
+          style += "background:#d1fae5;color:#065f46;border:1.5px solid #6ee7b7;cursor:pointer;";
+          el.title = "Haz clic para ver horarios";
+          el.addEventListener("click", () => seleccionarDia(el, fecha));
+        } else if (estado === "lleno") {
+          style += "background:#f9fafb;color:#9ca3af;text-decoration:line-through;cursor:not-allowed;opacity:.6;";
+          el.title = "Sin horarios disponibles";
+        } else if (estado === "bloqueado") {
+          style += "background:#f9fafb;color:#e5e7eb;cursor:not-allowed;";
+        } else {
+          style += "background:transparent;color:#d1d5db;cursor:not-allowed;";
+        }
+
+        el.style.cssText = style;
+      });
+    }
+
+    async function seleccionarDia(el, fecha) {
+      // Marcar día seleccionado
+      document.querySelectorAll(".cb-cal-day").forEach(d => {
+        if (d.dataset.fecha && (data => data[d.dataset.fecha] === "disponible")(
+          dispCache[`${mesVista.getFullYear()}-${String(mesVista.getMonth()+1).padStart(2,"0")}`] || {}
+        )) {
+          d.style.background = "#d1fae5";
+          d.style.color = "#065f46";
+          d.style.border = "1.5px solid #6ee7b7";
+          d.style.transform = "";
+          d.style.boxShadow = "";
+        }
+      });
+      el.style.background  = "#1a6cf6";
+      el.style.color       = "#fff";
+      el.style.border      = "1.5px solid #1a6cf6";
+      el.style.transform   = "scale(1.1)";
+      el.style.boxShadow   = "0 4px 12px rgba(26,108,246,.4)";
+
+      const slotsArea = document.getElementById("cb-slots-area");
+      if (!slotsArea) return;
+
+      const fechaFmt = new Date(fecha + "T12:00:00").toLocaleDateString("es-CO", {
+        weekday:"long", day:"numeric", month:"long"
+      });
+      slotsArea.innerHTML = `
+        <div style="font-size:.78rem;font-weight:600;color:#4b5563;margin-bottom:6px;
+                    font-family:'Plus Jakarta Sans',sans-serif;">
+          🕐 Horarios — <strong>${fechaFmt}</strong>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;color:#9ca3af;font-size:.78rem;
+                    font-family:'Plus Jakarta Sans',sans-serif;">
+          <div style="width:14px;height:14px;border:2px solid #e5e7eb;border-top-color:#1a6cf6;
+                      border-radius:50%;animation:cbSpin .7s linear infinite"></div>
+          Cargando horarios...
+        </div>`;
+      scrollBottom();
+
+      try {
+        const res   = await fetch(`/paciente/api/slots/${state.medico.id}/${fecha}?duracion=${state.especialidad.duracion_min}`);
+        const data  = await res.json();
+        const slots = data.slots || [];
+
+        if (!slots.length) {
+          slotsArea.innerHTML += `<p style="font-size:.78rem;color:#9ca3af;font-style:italic;
+                                             font-family:'Plus Jakarta Sans',sans-serif;margin:4px 0 0">
+                                    Sin horarios disponibles este día.</p>`;
+          return;
+        }
+
+        let slotsHtml = `<div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:4px">`;
+        slots.forEach(hora => {
+          const fin = calcHoraFin(hora, state.especialidad.duracion_min);
+          slotsHtml += `<button class="cb-slot-hora" data-hora="${hora}" data-fecha="${fecha}"
+            style="padding:4px 9px;border-radius:100px;border:1.5px solid #1a6cf6;
+                   color:#1a6cf6;background:#fff;font-size:.75rem;font-weight:600;
+                   font-family:'Plus Jakarta Sans',sans-serif;cursor:pointer;
+                   transition:.15s;" title="${hora} – ${fin}">
+            ${hora}
+          </button>`;
+        });
+        slotsHtml += `</div>`;
+
+        // Reemplazar spinner conservando el título
+        const tituloSlots = slotsArea.querySelector("div:first-child");
+        const tituloHtml  = tituloSlots ? tituloSlots.outerHTML : "";
+        slotsArea.innerHTML = tituloHtml + slotsHtml;
+
+        // Adjuntar eventos
+        slotsArea.querySelectorAll(".cb-slot-hora").forEach(btn => {
+          btn.addEventListener("mouseenter", () => {
+            if (!btn.classList.contains("activo")) { btn.style.background="#e8f0fe"; }
+          });
+          btn.addEventListener("mouseleave", () => {
+            if (!btn.classList.contains("activo")) { btn.style.background="#fff"; }
+          });
+          btn.addEventListener("click", () => elegirHora(btn, fecha, btn.dataset.hora));
+        });
+        scrollBottom();
+      } catch {
+        slotsArea.innerHTML += `<p style="font-size:.78rem;color:#ef4444;font-family:'Plus Jakarta Sans',sans-serif">
+                                  Error al cargar horarios.</p>`;
+      }
+    }
+
+    function elegirHora(btn, fecha, hora) {
+      // Desmarcar anteriores
+      document.querySelectorAll(".cb-slot-hora").forEach(b => {
+        b.classList.remove("activo");
+        b.style.background = "#fff";
+        b.style.color      = "#1a6cf6";
+        b.style.boxShadow  = "";
+      });
+      // Marcar seleccionado
+      btn.classList.add("activo");
+      btn.style.background = "#1a6cf6";
+      btn.style.color      = "#fff";
+      btn.style.boxShadow  = "0 3px 10px rgba(26,108,246,.35)";
+
+      state.fecha       = fecha;
+      state.hora_inicio = hora;
+      state.hora_fin    = calcHoraFin(hora, state.especialidad.duracion_min);
+
+      const horaFin  = state.hora_fin;
+      const fechaFmt = new Date(fecha + "T12:00:00").toLocaleDateString("es-CO", {
+        weekday:"long", day:"numeric", month:"long"
+      });
+
+      userMsg(`${formatFecha(fecha)} a las ${hora}`);
+
+      // Deshabilitar el calendario para que no se pueda cambiar
+      document.querySelectorAll(".cb-cal-day, .cb-slot-hora, #cb-cal-prev, #cb-cal-next")
+        .forEach(el => { el.style.pointerEvents = "none"; el.style.opacity = "0.7"; });
+      btn.style.opacity = "1";  // mantener hora seleccionada visible
+
       clearFooter();
       askMotivo();
-    };
-    btn.addEventListener("click", submit);
-    inp.addEventListener("keydown", e => { if (e.key === "Enter") submit(); });
+    }
   }
+
+  // PASO 7 – (eliminado: ahora el calendario maneja fecha + hora en un solo paso)
 
   // PASO 7b – Motivo (opcional)
   function askMotivo() {
@@ -543,10 +758,10 @@ document.addEventListener("DOMContentLoaded", function () {
       setTimeout(() => {
         botMsg("¿Deseas elegir otro horario?");
         showOptions([
-          { label: "🕐 Cambiar hora", value: "hora",
-            onSelect: () => { userMsg("Cambiar hora"); state.hora_inicio = null; askHora(); } },
-          { label: "📅 Cambiar fecha", value: "fecha",
-            onSelect: () => { userMsg("Cambiar fecha"); state.fecha = null; askFecha(); } },
+          { label: "📅 Cambiar fecha u hora", value: "fecha",
+            onSelect: () => { userMsg("Cambiar fecha u hora"); state.fecha = null; state.hora_inicio = null; askFecha(); } },
+          { label: "🔄 Cambiar médico", value: "medico",
+            onSelect: () => { userMsg("Cambiar médico"); resetToStep3(); } },
         ]);
       }, 400);
       return;
