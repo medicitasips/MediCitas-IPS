@@ -1,5 +1,5 @@
 -- =============================================================
--- BASE DE DATOS: eps_citas  (versión 2 – roles + catálogos)
+-- BASE DE DATOS: railway  (versión 1 – roles + catálogos)
 -- Sistema de Gestión de Citas Médicas
 -- Programa ADSO19 – SENA
 -- =============================================================
@@ -140,6 +140,33 @@ CREATE INDEX idx_cita_medico_fecha ON citas (id_medico, fecha);
 CREATE INDEX idx_cita_pac_fecha    ON citas (id_paciente, fecha);
 
 -- =============================================================
+-- TABLA: notas_consulta
+-- Observaciones clínicas que el médico registra al completar
+-- una cita. Relación 1-a-1 con citas.
+-- =============================================================
+CREATE TABLE IF NOT EXISTS notas_consulta (
+    id_nota             INT           NOT NULL AUTO_INCREMENT,
+    id_cita             INT           NOT NULL,
+    diagnostico         TEXT          NOT NULL
+        COMMENT 'Impresión diagnóstica o diagnóstico definitivo',
+    tratamiento         TEXT          NULL
+        COMMENT 'Medicamentos, procedimientos o indicaciones indicadas',
+    proxima_cita        VARCHAR(255)  NULL
+        COMMENT 'Recomendación de seguimiento (ej: en 3 semanas)',
+    observaciones       TEXT          NULL
+        COMMENT 'Notas adicionales del médico',
+    fecha_registro      DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT pk_nota       PRIMARY KEY (id_nota),
+    CONSTRAINT uq_nota_cita  UNIQUE (id_cita),
+    CONSTRAINT fk_nota_cita
+        FOREIGN KEY (id_cita)
+        REFERENCES citas (id_cita)
+        ON UPDATE CASCADE ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE INDEX idx_nota_cita ON notas_consulta (id_cita);
+
+-- =============================================================
 -- DATOS INICIALES – Catálogos
 -- =============================================================
 INSERT INTO eps (nombre) VALUES
@@ -160,20 +187,16 @@ INSERT INTO especialidades (nombre, duracion_min) VALUES
   ('Nutrición y Dietética', 40),
   ('Medicina Interna',    30);
 
-
-
 -- =============================================================
 -- USUARIOS DE PRUEBA
 -- Contraseñas en texto plano aquí solo para referencia;
 -- el sistema almacenará el hash generado por Werkzeug.
 --
 --   admin    / Admin2025*
---   dr.torres/ Medico2025*
---   laura    / Paciente2025*
--- =============================================================
 
 INSERT INTO usuarios (username, password_hash, rol)
 VALUES ('admin', 'scrypt:32768:8:1$rEEcyklYcuCllGUm$6701996c2f7d185285ff9dab9cf8ad0d57c54ecf75f3c067272f7b50232e53b59338cd7c0b867fa7340706a918635d6dc9a431db6d2215abd597cbe46966225d', 'admin');
+-- =============================================================
 
 -- Se insertan desde Python al arrancar (ver app.py seed_db)
 -- para garantizar que el hash sea correcto.
