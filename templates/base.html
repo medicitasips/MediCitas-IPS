@@ -136,5 +136,47 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 {% block scripts %}{% endblock %}
+
+<!-- ══════════════════  CHATBOT WIDGET (solo página principal) ══════════════════ -->
+{% if request.path == '/' %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/chatbot.css') }}" />
+
+<button id="cb-fab" aria-label="Abrir chatbot de agendamiento">
+  <i class="bi bi-chat-heart-fill"></i>
+  <span class="cb-fab-badge"></span>
+</button>
+
+<div id="cb-window" role="dialog" aria-label="Asistente de agendamiento">
+  <div id="cb-header">
+    <div class="cb-avatar">🏥</div>
+    <div class="cb-title">
+      <strong>Asistente MediCitas</strong>
+      <span>Agendamiento de citas</span>
+    </div>
+    <button id="cb-close" aria-label="Cerrar chat">
+      <i class="bi bi-x-lg"></i>
+    </button>
+  </div>
+
+  <div id="cb-progress">
+    <span class="cb-step-dot active"></span>
+    <span class="cb-step-dot"></span>
+    <span class="cb-step-dot"></span>
+    <span class="cb-step-dot"></span>
+    <span class="cb-step-dot"></span>
+    <span class="cb-step-dot"></span>
+    <span class="cb-step-dot"></span>
+    <span class="cb-step-dot"></span>
+    <span class="cb-step-dot"></span>
+    <span id="cb-progress-label">Inicio</span>
+  </div>
+
+  <div id="cb-messages" aria-live="polite"></div>
+  <div id="cb-footer"></div>
+</div>
+
+<script src="{{ url_for('static', filename='js/chatbot.js') }}"></script>
+{% endif %}
+
 </body>
 </html>
