@@ -6,46 +6,51 @@
 /* ══════════════════════════════════════════════
    CALENDARIO DE DISPONIBILIDAD
    ══════════════════════════════════════════════ */
-#cal-wrapper { display:none; margin-top:1.5rem; }
+#cal-wrapper {
+  display: none;
+  margin-top: 1.25rem;
+  /* Limitar ancho del calendario */
+  max-width: 380px;
+}
 
 .cal-header {
-  display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;
+  display:flex; align-items:center; justify-content:space-between; margin-bottom:.75rem;
 }
 .cal-title {
-  font-family:'DM Serif Display',serif; font-size:1.15rem;
+  font-family:'DM Serif Display',serif; font-size:1rem;
   color:#111827; font-weight:400; letter-spacing:-.01em;
 }
 .cal-nav-btn {
-  width:34px; height:34px; border-radius:8px;
+  width:28px; height:28px; border-radius:7px;
   border:1.5px solid #e5e7eb; background:#fff; color:#4b5563;
   display:flex; align-items:center; justify-content:center;
-  cursor:pointer; font-size:.9rem; transition:.2s;
+  cursor:pointer; font-size:.8rem; transition:.2s;
 }
 .cal-nav-btn:hover { background:#e8f0fe; color:#1a6cf6; border-color:#1a6cf6; }
 .cal-nav-btn:disabled { opacity:.35; cursor:not-allowed; }
 
 .cal-legend {
-  display:flex; gap:1rem; flex-wrap:wrap; margin-bottom:.75rem;
-  font-size:.78rem; color:#4b5563; font-family:'Plus Jakarta Sans',sans-serif;
+  display:flex; gap:.75rem; flex-wrap:wrap; margin-bottom:.6rem;
+  font-size:.72rem; color:#4b5563; font-family:'Plus Jakarta Sans',sans-serif;
 }
-.cal-legend-item { display:flex; align-items:center; gap:.35rem; }
-.cal-legend-dot { width:10px; height:10px; border-radius:50%; }
+.cal-legend-item { display:flex; align-items:center; gap:.3rem; }
+.cal-legend-dot { width:8px; height:8px; border-radius:50%; }
 .dot-disponible { background:#10b981; }
 .dot-lleno      { background:#ef4444; }
 .dot-pasado     { background:#d1d5db; }
 
 .cal-grid {
-  display:grid; grid-template-columns:repeat(7,1fr); gap:4px;
+  display:grid; grid-template-columns:repeat(7,1fr); gap:3px;
 }
 .cal-day-name {
-  text-align:center; font-size:.72rem; font-weight:700;
+  text-align:center; font-size:.65rem; font-weight:700;
   color:#9ca3af; text-transform:uppercase; letter-spacing:.04em;
-  padding:4px 0 6px; font-family:'Plus Jakarta Sans',sans-serif;
+  padding:3px 0 5px; font-family:'Plus Jakarta Sans',sans-serif;
 }
 .cal-day {
-  aspect-ratio:1; border-radius:10px;
+  aspect-ratio:1; border-radius:8px;
   display:flex; align-items:center; justify-content:center;
-  font-size:.85rem; font-weight:600;
+  font-size:.78rem; font-weight:600;
   font-family:'Plus Jakarta Sans',sans-serif;
   cursor:pointer; transition:.18s; position:relative;
   border:1.5px solid transparent; user-select:none;
@@ -53,6 +58,8 @@
 .cal-day.vacio    { cursor:default; }
 .cal-day.pasado   { color:#d1d5db; background:transparent; cursor:not-allowed; }
 .cal-day.bloqueado{ color:#e5e7eb; background:#f9fafb; cursor:not-allowed; }
+.cal-day.cargando { color:#d1d5db; background:#f9fafb; cursor:wait; }
+
 .cal-day.disponible {
   color:#065f46; background:#d1fae5; border-color:#6ee7b7;
 }
@@ -72,25 +79,27 @@
 .cal-day.hoy:not(.disponible):not(.lleno):not(.pasado):not(.bloqueado) {
   border-color:#1a6cf6; color:#1a6cf6; font-weight:800;
 }
+
 .cal-day::after {
-  content:''; position:absolute; bottom:3px; left:50%;
-  transform:translateX(-50%); width:4px; height:4px;
+  content:''; position:absolute; bottom:2px; left:50%;
+  transform:translateX(-50%); width:3px; height:3px;
   border-radius:50%; opacity:0;
 }
 .cal-day.disponible::after { background:#10b981; opacity:1; }
 .cal-day.lleno::after      { background:#ef4444; opacity:1; }
 
-#slots-panel { display:none; margin-top:1.25rem; }
+/* ── Panel de slots ── */
+#slots-panel { display:none; margin-top:1rem; }
 .slots-header {
-  font-size:.875rem; font-weight:600; color:#4b5563;
-  margin-bottom:.65rem; font-family:'Plus Jakarta Sans',sans-serif;
+  font-size:.82rem; font-weight:600; color:#4b5563;
+  margin-bottom:.55rem; font-family:'Plus Jakarta Sans',sans-serif;
   display:flex; align-items:center; gap:.4rem;
 }
-.slots-grid { display:flex; flex-wrap:wrap; gap:8px; }
+.slots-grid { display:flex; flex-wrap:wrap; gap:6px; }
 .slot-btn {
-  padding:.4rem .9rem; border-radius:100px;
+  padding:.3rem .75rem; border-radius:100px;
   border:1.5px solid #1a6cf6; color:#1a6cf6; background:#fff;
-  font-size:.82rem; font-weight:600;
+  font-size:.78rem; font-weight:600;
   font-family:'Plus Jakarta Sans',sans-serif;
   cursor:pointer; transition:.18s;
 }
@@ -101,26 +110,28 @@
 }
 .slots-loading {
   display:flex; align-items:center; gap:.5rem;
-  color:#9ca3af; font-size:.875rem;
+  color:#9ca3af; font-size:.82rem;
   font-family:'Plus Jakarta Sans',sans-serif;
 }
 .slots-loading .spinner {
-  width:16px; height:16px;
+  width:14px; height:14px;
   border:2px solid #e5e7eb; border-top-color:#1a6cf6;
   border-radius:50%; animation:spin .7s linear infinite;
 }
 @keyframes spin { to { transform:rotate(360deg); } }
-.slots-empty { color:#9ca3af; font-size:.875rem; font-style:italic; font-family:'Plus Jakarta Sans',sans-serif; }
+.slots-empty { color:#9ca3af; font-size:.82rem; font-style:italic; font-family:'Plus Jakarta Sans',sans-serif; }
 
+/* ── Resumen selección ── */
 #resumen-seleccion {
   display:none;
   background:linear-gradient(135deg,#eff6ff,#fff);
-  border:1.5px solid #bfdbfe; border-radius:12px;
-  padding:.75rem 1rem; margin-top:1rem;
-  font-size:.875rem; font-family:'Plus Jakarta Sans',sans-serif;
+  border:1.5px solid #bfdbfe; border-radius:10px;
+  padding:.6rem .9rem; margin-top:.9rem;
+  font-size:.82rem; font-family:'Plus Jakarta Sans',sans-serif;
 }
 #resumen-seleccion strong { color:#1a6cf6; }
 
+/* ── Skeleton ── */
 .cal-day.skeleton {
   background:linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%);
   background-size:200% 100%;
@@ -163,6 +174,7 @@
       <div class="form-card">
         <form method="POST" action="{{ url_for('paciente.reservar') }}" id="formReserva" novalidate>
 
+          <!-- ── PASO 1: Especialidad + Médico ── -->
           <div class="row g-3">
             <div class="col-12">
               <h6 class="section-divider">1. Especialidad y médico</h6>
@@ -197,6 +209,7 @@
               <div class="form-text" id="medicoHelp"></div>
             </div>
 
+            <!-- ── PASO 2: EPS ── -->
             <div class="col-12 mt-1">
               <h6 class="section-divider">2. EPS</h6>
             </div>
@@ -216,16 +229,20 @@
               </select>
             </div>
 
+            <!-- ── PASO 3: Calendario ── -->
             <div class="col-12 mt-1">
               <h6 class="section-divider">3. Fecha y hora</h6>
             </div>
           </div>
 
+          <!-- Prompt inicial -->
           <div id="cal-prompt" class="text-muted" style="font-size:.875rem;font-style:italic;margin-top:.5rem">
             <i class="bi bi-arrow-up me-1"></i> Selecciona una especialidad y un médico para ver la disponibilidad del calendario.
           </div>
 
+          <!-- Calendario -->
           <div id="cal-wrapper">
+
             <div class="cal-header">
               <button type="button" class="cal-nav-btn" id="cal-prev"><i class="bi bi-chevron-left"></i></button>
               <span class="cal-title" id="cal-title">—</span>
@@ -240,6 +257,7 @@
 
             <div class="cal-grid" id="cal-grid"></div>
 
+            <!-- Slots de hora -->
             <div id="slots-panel">
               <div class="slots-header">
                 <i class="bi bi-clock text-primary"></i>
@@ -248,16 +266,20 @@
               <div class="slots-grid" id="slots-grid"></div>
             </div>
 
+            <!-- Resumen -->
             <div id="resumen-seleccion">
               <i class="bi bi-check-circle-fill text-success me-1"></i>
               Seleccionaste: <strong id="resumen-texto">—</strong>
               <span class="ms-2 text-muted" style="font-size:.8rem" id="resumen-fin"></span>
             </div>
-          </div>
 
+          </div><!-- /cal-wrapper -->
+
+          <!-- Inputs ocultos -->
           <input type="hidden" name="fecha"       id="input-fecha" />
           <input type="hidden" name="hora_inicio" id="input-hora"  />
 
+          <!-- ── PASO 4: Motivo ── -->
           <div class="row g-3 mt-1">
             <div class="col-12">
               <h6 class="section-divider">4. Motivo de la consulta (opcional)</h6>
@@ -317,6 +339,7 @@ const inputFecha    = document.getElementById("input-fecha");
 const inputHora     = document.getElementById("input-hora");
 const btnConfirmar  = document.getElementById("btn-confirmar");
 
+// ── Cambio de especialidad ────────────────────────────────────
 selectEsp.addEventListener("change", async () => {
   const idEsp = selectEsp.value;
   const opt   = selectEsp.options[selectEsp.selectedIndex];
@@ -344,6 +367,7 @@ selectEsp.addEventListener("change", async () => {
   } catch { selectMed.innerHTML = '<option value="">Error al cargar médicos</option>'; }
 });
 
+// ── Cambio de médico ──────────────────────────────────────────
 selectMed.addEventListener("change", () => {
   const id = parseInt(selectMed.value);
   if (!id) { resetCalendario(); return; }
@@ -356,6 +380,7 @@ selectMed.addEventListener("change", () => {
   renderCalendario();
 });
 
+// ── Navegación mes ────────────────────────────────────────────
 calPrev.addEventListener("click", () => {
   const ant = new Date(mesVista.getFullYear(), mesVista.getMonth() - 1, 1);
   if (ant < new Date(hoy.getFullYear(), hoy.getMonth(), 1)) return;
@@ -366,6 +391,7 @@ calNext.addEventListener("click", () => {
   resetSeleccion(); renderCalendario();
 });
 
+// ── Renderizar calendario ─────────────────────────────────────
 async function renderCalendario() {
   const anio  = mesVista.getFullYear();
   const mes   = mesVista.getMonth() + 1;
@@ -422,6 +448,7 @@ function aplicarDisponibilidad(data) {
   });
 }
 
+// ── Seleccionar día ───────────────────────────────────────────
 async function seleccionarDia(el, fecha) {
   calGrid.querySelectorAll(".cal-day.seleccionado").forEach(d => d.classList.remove("seleccionado"));
   el.classList.add("seleccionado");
@@ -456,6 +483,7 @@ async function seleccionarDia(el, fecha) {
   }
 }
 
+// ── Seleccionar hora ──────────────────────────────────────────
 function seleccionarHora(btn, fecha, hora) {
   slotsGrid.querySelectorAll(".slot-btn.seleccionado").forEach(b => b.classList.remove("seleccionado"));
   btn.classList.add("seleccionado");
@@ -471,6 +499,7 @@ function seleccionarHora(btn, fecha, hora) {
   btnConfirmar.disabled    = false;
 }
 
+// ── Helpers ───────────────────────────────────────────────────
 function calcFin(inicio, durMin) {
   const [h, m] = inicio.split(":").map(Number);
   const total  = h * 60 + m + durMin;
@@ -488,6 +517,7 @@ function resetHora() {
   inputFecha.value = ""; inputHora.value = ""; btnConfirmar.disabled = true;
 }
 
+// ── Validación envío ──────────────────────────────────────────
 document.getElementById("formReserva").addEventListener("submit", e => {
   if (!inputFecha.value || !inputHora.value) {
     e.preventDefault();
