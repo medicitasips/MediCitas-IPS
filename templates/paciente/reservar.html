@@ -1,10 +1,140 @@
 {% extends "base.html" %}
 {% block title %}Reservar Cita – MediCitas{% endblock %}
 
+{% block head_extra %}
+<style>
+/* ══════════════════════════════════════════════
+   CALENDARIO DE DISPONIBILIDAD
+   ══════════════════════════════════════════════ */
+#cal-wrapper { display:none; margin-top:1.5rem; }
+
+.cal-header {
+  display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;
+}
+.cal-title {
+  font-family:'DM Serif Display',serif; font-size:1.15rem;
+  color:#111827; font-weight:400; letter-spacing:-.01em;
+}
+.cal-nav-btn {
+  width:34px; height:34px; border-radius:8px;
+  border:1.5px solid #e5e7eb; background:#fff; color:#4b5563;
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer; font-size:.9rem; transition:.2s;
+}
+.cal-nav-btn:hover { background:#e8f0fe; color:#1a6cf6; border-color:#1a6cf6; }
+.cal-nav-btn:disabled { opacity:.35; cursor:not-allowed; }
+
+.cal-legend {
+  display:flex; gap:1rem; flex-wrap:wrap; margin-bottom:.75rem;
+  font-size:.78rem; color:#4b5563; font-family:'Plus Jakarta Sans',sans-serif;
+}
+.cal-legend-item { display:flex; align-items:center; gap:.35rem; }
+.cal-legend-dot { width:10px; height:10px; border-radius:50%; }
+.dot-disponible { background:#10b981; }
+.dot-lleno      { background:#ef4444; }
+.dot-pasado     { background:#d1d5db; }
+
+.cal-grid {
+  display:grid; grid-template-columns:repeat(7,1fr); gap:4px;
+}
+.cal-day-name {
+  text-align:center; font-size:.72rem; font-weight:700;
+  color:#9ca3af; text-transform:uppercase; letter-spacing:.04em;
+  padding:4px 0 6px; font-family:'Plus Jakarta Sans',sans-serif;
+}
+.cal-day {
+  aspect-ratio:1; border-radius:10px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:.85rem; font-weight:600;
+  font-family:'Plus Jakarta Sans',sans-serif;
+  cursor:pointer; transition:.18s; position:relative;
+  border:1.5px solid transparent; user-select:none;
+}
+.cal-day.vacio    { cursor:default; }
+.cal-day.pasado   { color:#d1d5db; background:transparent; cursor:not-allowed; }
+.cal-day.bloqueado{ color:#e5e7eb; background:#f9fafb; cursor:not-allowed; }
+.cal-day.disponible {
+  color:#065f46; background:#d1fae5; border-color:#6ee7b7;
+}
+.cal-day.disponible:hover {
+  background:#10b981; color:#fff; border-color:#10b981;
+  transform:scale(1.08); box-shadow:0 4px 12px rgba(16,185,129,.3);
+}
+.cal-day.lleno {
+  color:#9ca3af; background:#f9fafb; border-color:#f3f4f6;
+  cursor:not-allowed; text-decoration:line-through; opacity:.6;
+}
+.cal-day.seleccionado {
+  background:#1a6cf6 !important; color:#fff !important;
+  border-color:#1a6cf6 !important;
+  transform:scale(1.08); box-shadow:0 4px 14px rgba(26,108,246,.4);
+}
+.cal-day.hoy:not(.disponible):not(.lleno):not(.pasado):not(.bloqueado) {
+  border-color:#1a6cf6; color:#1a6cf6; font-weight:800;
+}
+.cal-day::after {
+  content:''; position:absolute; bottom:3px; left:50%;
+  transform:translateX(-50%); width:4px; height:4px;
+  border-radius:50%; opacity:0;
+}
+.cal-day.disponible::after { background:#10b981; opacity:1; }
+.cal-day.lleno::after      { background:#ef4444; opacity:1; }
+
+#slots-panel { display:none; margin-top:1.25rem; }
+.slots-header {
+  font-size:.875rem; font-weight:600; color:#4b5563;
+  margin-bottom:.65rem; font-family:'Plus Jakarta Sans',sans-serif;
+  display:flex; align-items:center; gap:.4rem;
+}
+.slots-grid { display:flex; flex-wrap:wrap; gap:8px; }
+.slot-btn {
+  padding:.4rem .9rem; border-radius:100px;
+  border:1.5px solid #1a6cf6; color:#1a6cf6; background:#fff;
+  font-size:.82rem; font-weight:600;
+  font-family:'Plus Jakarta Sans',sans-serif;
+  cursor:pointer; transition:.18s;
+}
+.slot-btn:hover { background:#1a6cf6; color:#fff; transform:translateY(-1px); }
+.slot-btn.seleccionado {
+  background:#1a6cf6; color:#fff;
+  box-shadow:0 3px 10px rgba(26,108,246,.35);
+}
+.slots-loading {
+  display:flex; align-items:center; gap:.5rem;
+  color:#9ca3af; font-size:.875rem;
+  font-family:'Plus Jakarta Sans',sans-serif;
+}
+.slots-loading .spinner {
+  width:16px; height:16px;
+  border:2px solid #e5e7eb; border-top-color:#1a6cf6;
+  border-radius:50%; animation:spin .7s linear infinite;
+}
+@keyframes spin { to { transform:rotate(360deg); } }
+.slots-empty { color:#9ca3af; font-size:.875rem; font-style:italic; font-family:'Plus Jakarta Sans',sans-serif; }
+
+#resumen-seleccion {
+  display:none;
+  background:linear-gradient(135deg,#eff6ff,#fff);
+  border:1.5px solid #bfdbfe; border-radius:12px;
+  padding:.75rem 1rem; margin-top:1rem;
+  font-size:.875rem; font-family:'Plus Jakarta Sans',sans-serif;
+}
+#resumen-seleccion strong { color:#1a6cf6; }
+
+.cal-day.skeleton {
+  background:linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%);
+  background-size:200% 100%;
+  animation:shimmer 1.2s infinite;
+  cursor:wait; color:transparent;
+}
+@keyframes shimmer { 0% { background-position:200% 0; } 100% { background-position:-200% 0; } }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container-fluid px-4 py-4">
   <div class="row justify-content-center">
-    <div class="col-lg-7">
+    <div class="col-lg-8">
 
       <div class="page-header mb-4">
         <div class="page-icon bg-green-soft"><i class="bi bi-calendar-plus-fill text-success"></i></div>
@@ -14,7 +144,6 @@
         </div>
       </div>
 
-      <!-- Alerta de cruce de horario -->
       {% if cruce %}
       <div class="alert alert-danger border-0 shadow-sm mb-4">
         <h6 class="alert-heading"><i class="bi bi-exclamation-triangle-fill me-2"></i>Conflicto de horario detectado</h6>
@@ -35,8 +164,10 @@
         <form method="POST" action="{{ url_for('paciente.reservar') }}" id="formReserva" novalidate>
 
           <div class="row g-3">
+            <div class="col-12">
+              <h6 class="section-divider">1. Especialidad y médico</h6>
+            </div>
 
-            <!-- Especialidad -->
             <div class="col-md-6">
               <label class="form-label">
                 <i class="bi bi-clipboard2-pulse me-1"></i>Especialidad <span class="text-danger">*</span>
@@ -53,7 +184,6 @@
               </select>
             </div>
 
-            <!-- Médico (se carga dinámicamente) -->
             <div class="col-md-6">
               <label class="form-label">
                 <i class="bi bi-person-badge me-1"></i>Médico <span class="text-danger">*</span>
@@ -61,15 +191,15 @@
               <select class="form-select" id="id_medico" name="id_medico" required>
                 <option value="">— Primero seleccione especialidad —</option>
                 {% if form_data.get('id_medico') %}
-                  <option value="{{ form_data.get('id_medico') }}" selected>
-                    Médico seleccionado anteriormente
-                  </option>
+                  <option value="{{ form_data.get('id_medico') }}" selected>Médico seleccionado anteriormente</option>
                 {% endif %}
               </select>
               <div class="form-text" id="medicoHelp"></div>
             </div>
 
-            <!-- EPS -->
+            <div class="col-12 mt-1">
+              <h6 class="section-divider">2. EPS</h6>
+            </div>
             <div class="col-md-6">
               <label class="form-label">
                 <i class="bi bi-hospital me-1"></i>EPS <span class="text-danger">*</span>
@@ -86,40 +216,60 @@
               </select>
             </div>
 
-            <!-- Fecha -->
-            <div class="col-md-3">
-              <label class="form-label"><i class="bi bi-calendar-date me-1"></i>Fecha <span class="text-danger">*</span></label>
-              <input type="date" class="form-control" name="fecha"
-                     value="{{ form_data.get('fecha','') }}" required />
+            <div class="col-12 mt-1">
+              <h6 class="section-divider">3. Fecha y hora</h6>
+            </div>
+          </div>
+
+          <div id="cal-prompt" class="text-muted" style="font-size:.875rem;font-style:italic;margin-top:.5rem">
+            <i class="bi bi-arrow-up me-1"></i> Selecciona una especialidad y un médico para ver la disponibilidad del calendario.
+          </div>
+
+          <div id="cal-wrapper">
+            <div class="cal-header">
+              <button type="button" class="cal-nav-btn" id="cal-prev"><i class="bi bi-chevron-left"></i></button>
+              <span class="cal-title" id="cal-title">—</span>
+              <button type="button" class="cal-nav-btn" id="cal-next"><i class="bi bi-chevron-right"></i></button>
             </div>
 
-            <!-- Hora inicio -->
-            <div class="col-md-3">
-              <label class="form-label"><i class="bi bi-clock me-1"></i>Hora inicio <span class="text-danger">*</span></label>
-              <input type="time" class="form-control" name="hora_inicio"
-                     id="hora_inicio"
-                     value="{{ form_data.get('hora_inicio','') }}"
-                     step="900" required />
+            <div class="cal-legend">
+              <div class="cal-legend-item"><div class="cal-legend-dot dot-disponible"></div> Con disponibilidad</div>
+              <div class="cal-legend-item"><div class="cal-legend-dot dot-lleno"></div> Sin horarios libres</div>
+              <div class="cal-legend-item"><div class="cal-legend-dot dot-pasado"></div> Fecha pasada</div>
             </div>
 
-            <!-- Hora fin calculada (solo lectura) -->
-            <div class="col-md-6">
-              <label class="form-label text-muted"><i class="bi bi-clock-history me-1"></i>Hora estimada de fin</label>
-              <input type="text" class="form-control bg-light" id="hora_fin_display"
-                     readonly placeholder="Se calcula automáticamente" />
+            <div class="cal-grid" id="cal-grid"></div>
+
+            <div id="slots-panel">
+              <div class="slots-header">
+                <i class="bi bi-clock text-primary"></i>
+                Horarios disponibles — <strong id="slots-fecha-label">—</strong>
+              </div>
+              <div class="slots-grid" id="slots-grid"></div>
             </div>
 
-            <!-- Motivo -->
+            <div id="resumen-seleccion">
+              <i class="bi bi-check-circle-fill text-success me-1"></i>
+              Seleccionaste: <strong id="resumen-texto">—</strong>
+              <span class="ms-2 text-muted" style="font-size:.8rem" id="resumen-fin"></span>
+            </div>
+          </div>
+
+          <input type="hidden" name="fecha"       id="input-fecha" />
+          <input type="hidden" name="hora_inicio" id="input-hora"  />
+
+          <div class="row g-3 mt-1">
             <div class="col-12">
-              <label class="form-label"><i class="bi bi-chat-text me-1"></i>Motivo de la consulta</label>
-              <textarea class="form-control" name="motivo" rows="2"
-                        placeholder="Describa brevemente el motivo de la cita (opcional)">{{ form_data.get('motivo','') }}</textarea>
+              <h6 class="section-divider">4. Motivo de la consulta (opcional)</h6>
             </div>
-
+            <div class="col-12">
+              <textarea class="form-control" name="motivo" rows="2"
+                placeholder="Describe brevemente el motivo...">{{ form_data.get('motivo','') }}</textarea>
+            </div>
           </div>
 
           <div class="d-flex gap-3 mt-4">
-            <button type="submit" class="btn btn-success-custom">
+            <button type="submit" class="btn btn-success-custom" id="btn-confirmar" disabled>
               <i class="bi bi-calendar-check me-2"></i>Confirmar Reserva
             </button>
             <a href="{{ url_for('paciente.dashboard') }}" class="btn btn-light">
@@ -137,34 +287,51 @@
 
 {% block scripts %}
 <script>
-// ── Cargar médicos dinámicamente según especialidad ────────────
-const selectEsp   = document.getElementById("id_especialidad");
-const selectMed   = document.getElementById("id_medico");
-const horaInicio  = document.getElementById("hora_inicio");
-const horaFinDisp = document.getElementById("hora_fin_display");
-const medicoHelp  = document.getElementById("medicoHelp");
+"use strict";
 
-let duracionActual = 30;
+let duracionActual  = 30;
+let medicoActual    = null;
+let mesVista        = new Date();
+let disponibilidadCache = {};
+
+const hoy = new Date();
+hoy.setHours(0,0,0,0);
+const hoyISO = hoy.toISOString().split("T")[0];
+
+const selectEsp     = document.getElementById("id_especialidad");
+const selectMed     = document.getElementById("id_medico");
+const medicoHelp    = document.getElementById("medicoHelp");
+const calWrapper    = document.getElementById("cal-wrapper");
+const calPrompt     = document.getElementById("cal-prompt");
+const calGrid       = document.getElementById("cal-grid");
+const calTitle      = document.getElementById("cal-title");
+const calPrev       = document.getElementById("cal-prev");
+const calNext       = document.getElementById("cal-next");
+const slotsPanel    = document.getElementById("slots-panel");
+const slotsGrid     = document.getElementById("slots-grid");
+const slotsFechaLbl = document.getElementById("slots-fecha-label");
+const resumenDiv    = document.getElementById("resumen-seleccion");
+const resumenTxt    = document.getElementById("resumen-texto");
+const resumenFin    = document.getElementById("resumen-fin");
+const inputFecha    = document.getElementById("input-fecha");
+const inputHora     = document.getElementById("input-hora");
+const btnConfirmar  = document.getElementById("btn-confirmar");
 
 selectEsp.addEventListener("change", async () => {
   const idEsp = selectEsp.value;
   const opt   = selectEsp.options[selectEsp.selectedIndex];
-  duracionActual = parseInt(opt.dataset.duracion || 30);
-  actualizarHoraFin();
-
+  duracionActual = parseInt(opt.dataset?.duracion || 30);
+  resetCalendario();
   selectMed.innerHTML = '<option value="">Cargando...</option>';
   medicoHelp.textContent = "";
-
   if (!idEsp) {
     selectMed.innerHTML = '<option value="">— Primero seleccione especialidad —</option>';
     return;
   }
-
   try {
     const res  = await fetch(`/paciente/api/medicos/${idEsp}`);
     const data = await res.json();
-
-    if (data.length === 0) {
+    if (!data.length) {
       selectMed.innerHTML = '<option value="">Sin médicos disponibles</option>';
       medicoHelp.textContent = "No hay médicos activos para esta especialidad.";
     } else {
@@ -174,22 +341,158 @@ selectEsp.addEventListener("change", async () => {
       });
       medicoHelp.textContent = `${data.length} médico(s) disponible(s)`;
     }
-  } catch (e) {
-    selectMed.innerHTML = '<option value="">Error al cargar médicos</option>';
-  }
+  } catch { selectMed.innerHTML = '<option value="">Error al cargar médicos</option>'; }
 });
 
-// ── Calcular hora fin visualmente ─────────────────────────────
-horaInicio.addEventListener("change", actualizarHoraFin);
+selectMed.addEventListener("change", () => {
+  const id = parseInt(selectMed.value);
+  if (!id) { resetCalendario(); return; }
+  medicoActual = id;
+  mesVista = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+  disponibilidadCache = {};
+  resetSeleccion();
+  calWrapper.style.display = "block";
+  calPrompt.style.display  = "none";
+  renderCalendario();
+});
 
-function actualizarHoraFin() {
-  const hora = horaInicio.value;
-  if (!hora) { horaFinDisp.value = ""; return; }
-  const [h, m] = hora.split(":").map(Number);
-  const total  = h * 60 + m + duracionActual;
-  const hf = String(Math.floor(total / 60) % 24).padStart(2,"0");
-  const mf = String(total % 60).padStart(2,"0");
-  horaFinDisp.value = `${hf}:${mf}`;
+calPrev.addEventListener("click", () => {
+  const ant = new Date(mesVista.getFullYear(), mesVista.getMonth() - 1, 1);
+  if (ant < new Date(hoy.getFullYear(), hoy.getMonth(), 1)) return;
+  mesVista = ant; resetSeleccion(); renderCalendario();
+});
+calNext.addEventListener("click", () => {
+  mesVista = new Date(mesVista.getFullYear(), mesVista.getMonth() + 1, 1);
+  resetSeleccion(); renderCalendario();
+});
+
+async function renderCalendario() {
+  const anio  = mesVista.getFullYear();
+  const mes   = mesVista.getMonth() + 1;
+  const clave = `${anio}-${String(mes).padStart(2,"0")}`;
+
+  calTitle.textContent = mesVista.toLocaleDateString("es-CO", { month:"long", year:"numeric" });
+  calTitle.style.textTransform = "capitalize";
+  calPrev.disabled = mesVista <= new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+
+  const diasSemana = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
+  let html = diasSemana.map(d => `<div class="cal-day-name">${d}</div>`).join("");
+
+  const primerDia = new Date(anio, mes - 1, 1).getDay();
+  const numDias   = new Date(anio, mes, 0).getDate();
+
+  for (let i = 0; i < primerDia; i++) html += `<div class="cal-day vacio"></div>`;
+  for (let d = 1; d <= numDias; d++) {
+    const fecha = `${anio}-${String(mes).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+    const esHoy = fecha === hoyISO;
+    html += `<div class="cal-day skeleton${esHoy ? " hoy" : ""}" data-fecha="${fecha}">${d}</div>`;
+  }
+  calGrid.innerHTML = html;
+
+  if (disponibilidadCache[clave]) {
+    aplicarDisponibilidad(disponibilidadCache[clave]);
+  } else {
+    try {
+      const url  = `/paciente/api/disponibilidad/${medicoActual}/${anio}/${mes}?duracion=${duracionActual}`;
+      const res  = await fetch(url);
+      const data = await res.json();
+      disponibilidadCache[clave] = data;
+      aplicarDisponibilidad(data);
+    } catch {
+      calGrid.querySelectorAll(".cal-day.skeleton").forEach(el => {
+        el.classList.remove("skeleton"); el.classList.add("pasado");
+      });
+    }
+  }
 }
+
+function aplicarDisponibilidad(data) {
+  calGrid.querySelectorAll(".cal-day[data-fecha]").forEach(el => {
+    const fecha  = el.dataset.fecha;
+    const estado = data[fecha] || "pasado";
+    el.classList.remove("skeleton");
+    el.classList.add(estado);
+    if (estado === "disponible") {
+      el.title = "Clic para ver horarios disponibles";
+      el.addEventListener("click", () => seleccionarDia(el, fecha));
+    } else {
+      const titulos = { lleno:"Sin horarios disponibles", pasado:"Fecha pasada", bloqueado:"Día no laborable" };
+      el.title = titulos[estado] || "";
+    }
+  });
+}
+
+async function seleccionarDia(el, fecha) {
+  calGrid.querySelectorAll(".cal-day.seleccionado").forEach(d => d.classList.remove("seleccionado"));
+  el.classList.add("seleccionado");
+
+  const fechaFmt = new Date(fecha + "T12:00:00").toLocaleDateString("es-CO", {
+    weekday:"long", day:"numeric", month:"long"
+  });
+  slotsFechaLbl.textContent = fechaFmt;
+  slotsPanel.style.display  = "block";
+  slotsGrid.innerHTML = `<div class="slots-loading"><div class="spinner"></div>Cargando horarios...</div>`;
+  resetHora();
+
+  try {
+    const res   = await fetch(`/paciente/api/slots/${medicoActual}/${fecha}?duracion=${duracionActual}`);
+    const data  = await res.json();
+    const slots = data.slots || [];
+    if (!slots.length) {
+      slotsGrid.innerHTML = `<div class="slots-empty">No hay horarios disponibles para este día.</div>`;
+      return;
+    }
+    slotsGrid.innerHTML = "";
+    slots.forEach(hora => {
+      const btn = document.createElement("button");
+      btn.type = "button"; btn.className = "slot-btn";
+      btn.textContent = hora;
+      btn.title = `${hora} – ${calcFin(hora, duracionActual)}`;
+      btn.addEventListener("click", () => seleccionarHora(btn, fecha, hora));
+      slotsGrid.appendChild(btn);
+    });
+  } catch {
+    slotsGrid.innerHTML = `<div class="slots-empty">Error al cargar horarios. Intenta de nuevo.</div>`;
+  }
+}
+
+function seleccionarHora(btn, fecha, hora) {
+  slotsGrid.querySelectorAll(".slot-btn.seleccionado").forEach(b => b.classList.remove("seleccionado"));
+  btn.classList.add("seleccionado");
+  inputFecha.value = fecha;
+  inputHora.value  = hora;
+  const horaFin = calcFin(hora, duracionActual);
+  const fechaFmt = new Date(fecha + "T12:00:00").toLocaleDateString("es-CO", {
+    weekday:"long", day:"numeric", month:"long", year:"numeric"
+  });
+  resumenTxt.textContent   = `${fechaFmt} a las ${hora}`;
+  resumenFin.textContent   = `(fin estimado: ${horaFin})`;
+  resumenDiv.style.display = "block";
+  btnConfirmar.disabled    = false;
+}
+
+function calcFin(inicio, durMin) {
+  const [h, m] = inicio.split(":").map(Number);
+  const total  = h * 60 + m + durMin;
+  return `${String(Math.floor(total/60)%24).padStart(2,"0")}:${String(total%60).padStart(2,"0")}`;
+}
+function resetCalendario() {
+  medicoActual = null; disponibilidadCache = {};
+  calWrapper.style.display = "none"; calPrompt.style.display = "block";
+  slotsPanel.style.display = "none"; resetSeleccion();
+}
+function resetSeleccion() {
+  slotsPanel.style.display = "none"; resumenDiv.style.display = "none"; resetHora();
+}
+function resetHora() {
+  inputFecha.value = ""; inputHora.value = ""; btnConfirmar.disabled = true;
+}
+
+document.getElementById("formReserva").addEventListener("submit", e => {
+  if (!inputFecha.value || !inputHora.value) {
+    e.preventDefault();
+    alert("Por favor selecciona una fecha y hora en el calendario.");
+  }
+});
 </script>
 {% endblock %}
