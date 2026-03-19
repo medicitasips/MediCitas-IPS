@@ -513,7 +513,7 @@ document.addEventListener("DOMContentLoaded", function () {
       // Cargar disponibilidad
       if (!dispCache[clave]) {
         try {
-          const url  = `/paciente/api/disponibilidad/${state.medico.id}/${anio}/${mes}?duracion=${state.especialidad.duracion_min}`;
+          const url  = `/chatbot/disponibilidad/${state.medico.id}/${anio}/${mes}?duracion=${state.especialidad.duracion_min}`;
           const res  = await fetch(url);
           dispCache[clave] = await res.json();
         } catch { return; }
@@ -598,7 +598,7 @@ document.addEventListener("DOMContentLoaded", function () {
       scrollBottom();
 
       try {
-        const res   = await fetch(`/paciente/api/slots/${state.medico.id}/${fecha}?duracion=${state.especialidad.duracion_min}`);
+        const res   = await fetch(`/chatbot/slots/${state.medico.id}/${fecha}?duracion=${state.especialidad.duracion_min}`);
         const data  = await res.json();
         const slots = data.slots || [];
 
