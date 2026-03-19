@@ -40,6 +40,25 @@ def obtener_paciente_por_usuario(id_usuario: int) -> dict | None:
         if conn and conn.is_connected(): cur.close(); conn.close()
 
 
+def obtener_paciente_por_id(id_paciente: int) -> dict | None:
+    """Retorna el perfil de un paciente por su id_paciente."""
+    sql = """
+        SELECT p.id_paciente, p.documento, p.nombre, p.apellido,
+               p.telefono, p.correo, p.id_eps, e.nombre AS eps_nombre
+        FROM pacientes p
+        INNER JOIN eps e ON p.id_eps = e.id_eps
+        WHERE p.id_paciente = %s LIMIT 1
+    """
+    conn = None
+    try:
+        conn = get_connection()
+        cur  = conn.cursor(dictionary=True)
+        cur.execute(sql, (id_paciente,))
+        return cur.fetchone()
+    finally:
+        if conn and conn.is_connected(): cur.close(); conn.close()
+
+
 def obtener_paciente_por_documento(documento: str) -> dict | None:
     sql = """
         SELECT p.id_paciente, p.documento, p.nombre, p.apellido,
