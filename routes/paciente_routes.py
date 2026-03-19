@@ -12,7 +12,8 @@ from routes.decoradores    import login_required, rol_requerido
 from models.paciente_model import obtener_paciente_por_usuario
 from models.cita_model     import (citas_por_paciente, crear_cita,
                                     obtener_cita_por_id, actualizar_cita,
-                                    cambiar_estado_cita)
+                                    cambiar_estado_cita,
+                                    disponibilidad_mes, slots_disponibles_dia)
 from models.catalogo_model import (listar_especialidades, listar_eps,
                                     listar_medicos_por_especialidad,
                                     obtener_especialidad_por_id,
@@ -58,14 +59,14 @@ def reservar():
         hora_inicio     = request.form.get("hora_inicio","").strip()
         motivo          = request.form.get("motivo",     "").strip()
 
-        # Validación básica
         if not all([id_especialidad, id_medico, id_eps, fecha, hora_inicio]):
             flash("Todos los campos son obligatorios.", "danger")
             return render_template("paciente/reservar.html",
                                    perfil=perfil,
                                    especialidades=especialidades,
                                    eps_lista=eps_lista,
-                                   form_data=request.form)
+                                   form_data=request.form,
+                                   cruce=[])
 
         especialidad = obtener_especialidad_por_id(id_especialidad)
         duracion     = especialidad["duracion_min"] if especialidad else 30
@@ -86,7 +87,6 @@ def reservar():
             return redirect(url_for("paciente.dashboard"))
         else:
             flash(f"No se pudo reservar: {resultado['error']}", "danger")
-            # Mostrar detalles del cruce si los hay
             cruce = resultado.get("cruce", [])
             return render_template("paciente/reservar.html",
                                    perfil=perfil,
@@ -179,7 +179,7 @@ def cancelar_cita(id_cita):
     return redirect(url_for("paciente.dashboard"))
 
 
-# ── API: médicos por especialidad (AJAX) ──────────────────────
+# ── API: médicos por especialidad ─────────────────────────────
 
 @paciente_bp.route("/api/medicos/<int:id_especialidad>")
 @login_required
@@ -188,3 +188,27 @@ def api_medicos(id_especialidad):
     from flask import jsonify
     medicos = listar_medicos_por_especialidad(id_especialidad)
     return jsonify(medicos)
+
+
+# ── API: disponibilidad mensual del médico ────────────────────
+
+@paciente_bp.route("/api/disponibilidad/<int:id_medico>/<int:anio>/<int:mes>")
+@login_required
+@rol_requerido("paciente")
+def api_disponibilidad_mes(id_medico, anio, mes):
+    from flask import jsonify, request as req
+    duracion = int(req.args.get("duracion", 30))
+    datos = disponibilidad_mes(id_medico, anio, mes, duracion)
+    return jsonify(datos)
+
+
+# ── API: slots disponibles de un día concreto ─────────────────
+
+@paciente_bp.route("/api/slots/<int:id_medico>/<fecha>")
+@login_required
+@rol_requerido("paciente")
+def api_slots_dia(id_medico, fecha):
+    from flask import jsonify, request as req
+    duracion = int(req.args.get("duracion", 30))
+    slots = slots_disponibles_dia(id_medico, fecha, duracion)
+    return jsonify({"slots": slots})
