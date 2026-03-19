@@ -180,7 +180,6 @@ h1,h2,h3,h4,h5 {
 .kpi-card::before {
   content: '';
   position: absolute; top:0; left:0; right:0; height:4px;
-  pointer-events: none;
 }
 .kpi-blue::before   { background: var(--primary); }
 .kpi-green::before  { background: var(--success); }
@@ -191,7 +190,6 @@ h1,h2,h3,h4,h5 {
   font-size: 2rem; margin-bottom: .5rem;
   opacity: .18;
   position: absolute; right: 1.25rem; top: 1.25rem;
-  pointer-events: none;
 }
 .kpi-blue   .kpi-icon { color: var(--primary); }
 .kpi-green  .kpi-icon { color: var(--success); }
@@ -407,7 +405,7 @@ code { background: var(--bg-light); padding: .1rem .4rem; border-radius: 4px; fo
 }
 
 /* ══════════════════════════════════════════════════════════════
-   PÁGINA DE INICIO (index.html) – hero y stats
+   PÁGINA DE INICIO (index.html) – estilos del hero y stats
    ══════════════════════════════════════════════════════════════ */
 
 /* ── Hero section ─────────────────────────────────────────── */
@@ -417,7 +415,7 @@ code { background: var(--bg-light); padding: .1rem .4rem; border-radius: 4px; fo
   overflow: hidden;
   position: relative;
 }
-/* El contenido siempre por encima del ::before */
+/* El contenido del hero debe estar por encima del ::before */
 .hero-section .container {
   position: relative;
   z-index: 1;
@@ -426,7 +424,7 @@ code { background: var(--bg-light); padding: .1rem .4rem; border-radius: 4px; fo
   content: '';
   position: absolute; inset: 0;
   background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-  pointer-events: none; /* ← permite clics en botones */
+  pointer-events: none;  /* ← permite que los clics pasen al contenido */
 }
 
 .badge-pill {
@@ -455,30 +453,137 @@ code { background: var(--bg-light); padding: .1rem .4rem; border-radius: 4px; fo
 
 .min-vh-60 { min-height: 60vh; }
 
-/* Hero illustration */
-.hero-illustration {
-  position: relative; width: 340px; height: 340px;
-  display: flex; align-items: center; justify-content: center;
+/* Hero illustration → REEMPLAZADO POR IMAGEN */
+/* ── Hero image wrapper ───────────────────────────────────── */
+.hero-img-wrapper {
+  position: relative;
+  width: 400px;
+  height: 500px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
-.circle-bg {
-  position: absolute; inset: 0; border-radius: 50%;
-  background: radial-gradient(circle at 40% 40%,
-    rgba(96,165,250,.25) 0%, rgba(26,108,246,.1) 60%, transparent 100%);
-  border: 1px solid rgba(96,165,250,.2);
-  animation: pulse-circle 3s ease-in-out infinite;
+
+/* Anillos animados de fondo */
+.hero-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid rgba(96, 165, 250, .18);
+  animation: ring-pulse 4s ease-in-out infinite;
+  pointer-events: none;
 }
-.hero-icon {
-  font-size: 8rem; color: rgba(255,255,255,.15);
-  position: relative; z-index: 1;
-  animation: float 4s ease-in-out infinite;
+.hero-ring-1 { width: 460px; height: 460px; animation-delay: 0s;    }
+.hero-ring-2 { width: 390px; height: 390px; animation-delay: .6s;   }
+.hero-ring-3 { width: 320px; height: 320px; animation-delay: 1.2s;
+               border-color: rgba(96,165,250,.3); }
+
+@keyframes ring-pulse {
+  0%, 100% { transform: scale(1);    opacity: .6; }
+  50%       { transform: scale(1.03); opacity: 1;  }
 }
-@keyframes float {
+
+/* Marco de la imagen */
+.hero-img-frame {
+  position: relative;
+  width: 280px;
+  height: 360px;
+  border-radius: 50% 50% 46% 54% / 60% 60% 40% 40%;
+  overflow: hidden;
+  border: 3px solid rgba(96, 165, 250, .35);
+  box-shadow:
+    0 0 0 6px rgba(26,108,246,.12),
+    0 0 0 12px rgba(26,108,246,.06),
+    0 30px 60px rgba(0,0,0,.45);
+  animation: frame-float 5s ease-in-out infinite;
+  z-index: 2;
+}
+
+@keyframes frame-float {
   0%, 100% { transform: translateY(0); }
-  50%       { transform: translateY(-14px); }
+  50%       { transform: translateY(-12px); }
 }
-@keyframes pulse-circle {
-  0%, 100% { transform: scale(1);    opacity: 1; }
-  50%       { transform: scale(1.04); opacity: .8; }
+
+/* Imagen dentro del marco */
+.hero-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  filter: brightness(.92) saturate(1.1);
+  transition: transform .6s ease;
+}
+.hero-img-frame:hover .hero-img { transform: scale(1.04); }
+
+/* Degradado de fusión en la base de la imagen */
+.hero-img-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    transparent 50%,
+    rgba(15, 23, 42, .55) 100%
+  );
+  pointer-events: none;
+}
+
+/* ── Tarjetas flotantes ───────────────────────────────────── */
+.hero-float-card {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  background: rgba(255,255,255,.1);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255,255,255,.2);
+  border-radius: 14px;
+  padding: .65rem 1rem;
+  box-shadow: 0 8px 32px rgba(0,0,0,.25);
+  z-index: 3;
+  white-space: nowrap;
+  animation: float-card 4s ease-in-out infinite;
+}
+
+.hero-float-top    { top: 18px;   right: -20px; animation-delay: .4s; }
+.hero-float-bottom { bottom: 30px; left: -30px; animation-delay: 1s;  }
+.hero-float-left   { top: 50%;    left: -44px; transform: translateY(-50%);
+                     animation: float-card-lr 4s ease-in-out infinite; animation-delay: .7s; }
+
+@keyframes float-card {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-6px); }
+}
+@keyframes float-card-lr {
+  0%, 100% { transform: translateY(-50%) translateX(0); }
+  50%       { transform: translateY(-50%) translateX(-5px); }
+}
+
+.float-icon {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.05rem;
+  flex-shrink: 0;
+}
+.float-icon-red   { background: rgba(239,68,68,.25);  color: #fca5a5; }
+.float-icon-green { background: rgba(16,185,129,.25); color: #6ee7b7; }
+.float-icon-blue  { background: rgba(96,165,250,.25); color: #93c5fd; }
+
+.float-label {
+  font-size: .7rem;
+  color: rgba(255,255,255,.65);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  line-height: 1;
+  margin-bottom: .15rem;
+}
+.float-value {
+  font-size: .95rem;
+  color: #fff;
+  font-weight: 700;
+  line-height: 1;
 }
 
 /* ── Outline button (hero) ────────────────────────────────── */
@@ -525,4 +630,171 @@ code { background: var(--bg-light); padding: .1rem .4rem; border-radius: 4px; fo
   .timeline-time { width: 48px; left: -60px; }
   .cita-card-footer { flex-direction: column; }
   .kpi-value     { font-size: 2rem; }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   HERO VISUAL – imagen médico + anillos + chips flotantes
+   ══════════════════════════════════════════════════════════════ */
+
+.hero-visual {
+  position: relative;
+  width: 420px;
+  height: 520px;
+  flex-shrink: 0;
+}
+
+/* ── Anillos decorativos animados ─────────────────────────── */
+.hero-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid rgba(96,165,250,.18);
+  animation: ring-expand 4s ease-in-out infinite;
+  pointer-events: none;
+}
+.ring-1 {
+  width: 300px; height: 300px;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  animation-delay: 0s;
+}
+.ring-2 {
+  width: 400px; height: 400px;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  border-color: rgba(96,165,250,.10);
+  animation-delay: .8s;
+}
+.ring-3 {
+  width: 500px; height: 500px;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  border-color: rgba(96,165,250,.05);
+  animation-delay: 1.6s;
+}
+@keyframes ring-expand {
+  0%, 100% { transform: translate(-50%,-50%) scale(1);    opacity: 1; }
+  50%       { transform: translate(-50%,-50%) scale(1.04); opacity: .6; }
+}
+
+/* ── Marco de la fotografía ───────────────────────────────── */
+.hero-photo-frame {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 240px;
+  height: 320px;
+  border-radius: 50% 50% 48% 48% / 42% 42% 58% 58%;
+  overflow: hidden;
+  box-shadow:
+    0 0 0 3px rgba(96,165,250,.35),
+    0 0 0 7px rgba(96,165,250,.12),
+    0 30px 60px rgba(0,0,0,.45);
+  z-index: 2;
+  animation: photo-float 5s ease-in-out infinite;
+}
+@keyframes photo-float {
+  0%, 100% { transform: translate(-50%,-50%) translateY(0); }
+  50%       { transform: translate(-50%,-50%) translateY(-10px); }
+}
+
+.hero-photo {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  display: block;
+  filter: brightness(1.05) contrast(1.05);
+  transition: transform .6s ease;
+}
+.hero-photo-frame:hover .hero-photo {
+  transform: scale(1.04);
+}
+
+/* Degradado inferior: funde la foto con el fondo oscuro */
+.hero-photo-fade {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 45%;
+  background: linear-gradient(to top,
+    rgba(15,23,42,.75) 0%,
+    transparent 100%);
+  pointer-events: none;
+}
+
+/* Borde luminoso animado */
+.hero-photo-border {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg,
+    rgba(96,165,250,.4) 0%,
+    transparent 40%,
+    transparent 60%,
+    rgba(26,108,246,.3) 100%);
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  animation: border-shimmer 3s linear infinite;
+}
+@keyframes border-shimmer {
+  0%   { opacity: .6; }
+  50%  { opacity: 1;  }
+  100% { opacity: .6; }
+}
+
+/* ── Chips flotantes ──────────────────────────────────────── */
+.hero-chip {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  background: rgba(15,23,42,.82);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 14px;
+  padding: .6rem .9rem;
+  z-index: 10;
+  box-shadow: 0 8px 24px rgba(0,0,0,.35);
+  white-space: nowrap;
+  animation: chip-float 4s ease-in-out infinite;
+}
+
+.chip-top-right   { top: 4%;  right: -4%;  animation-delay: 0s;    }
+.chip-bottom-left { bottom: 8%; left: -6%; animation-delay: 1s;    }
+.chip-mid-left    { top: 38%; left: -10%; animation-delay: 2s;    }
+.chip-bottom-right{ bottom: 20%; right: -5%; animation-delay: 1.5s; }
+
+@keyframes chip-float {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-6px); }
+}
+
+.chip-icon-wrap {
+  width: 32px; height: 32px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .95rem;
+  flex-shrink: 0;
+}
+.chip-red    { background: rgba(239,68,68,.2);  color: #f87171; }
+.chip-green  { background: rgba(16,185,129,.2); color: #34d399; }
+.chip-blue   { background: rgba(26,108,246,.25);color: #60a5fa; }
+.chip-purple { background: rgba(124,58,237,.2); color: #a78bfa; }
+
+.chip-text { display: flex; flex-direction: column; line-height: 1.2; }
+.chip-label { font-size: .7rem;  color: rgba(255,255,255,.55); font-weight: 500; }
+.chip-value { font-size: .8rem;  color: #fff; font-weight: 700; }
+
+/* Punto pulsante "en vivo" */
+.chip-pulse-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #34d399;
+  box-shadow: 0 0 0 0 rgba(52,211,153,.4);
+  animation: pulse-dot 1.8s ease-out infinite;
+  flex-shrink: 0;
+}
+@keyframes pulse-dot {
+  0%   { box-shadow: 0 0 0 0   rgba(52,211,153,.5); }
+  70%  { box-shadow: 0 0 0 7px rgba(52,211,153,0);  }
+  100% { box-shadow: 0 0 0 0   rgba(52,211,153,0);  }
 }
