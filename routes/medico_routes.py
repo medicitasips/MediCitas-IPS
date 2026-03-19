@@ -12,6 +12,7 @@ from routes.decoradores    import login_required, rol_requerido
 from models.catalogo_model import obtener_medico_por_usuario
 from models.cita_model     import (citas_por_medico, obtener_cita_por_id,
                                     cambiar_estado_cita, horario_del_dia)
+from models.nota_model     import crear_nota, obtener_nota_por_cita
 
 medico_bp = Blueprint("medico", __name__, url_prefix="/medico")
 
@@ -28,7 +29,7 @@ def dashboard():
         return redirect(url_for("auth.login"))
 
     from datetime import date
-    hoy   = date.today().isoformat()
+    hoy         = date.today().isoformat()
     citas_hoy   = horario_del_dia(perfil["id_medico"], hoy)
     todas_citas = citas_por_medico(perfil["id_medico"])
 
@@ -52,12 +53,14 @@ def ver_cita(id_cita):
         flash("Cita no encontrada o sin permiso.", "danger")
         return redirect(url_for("medico.dashboard"))
 
-    return render_template("medico/ver_cita.html", cita=cita, perfil=perfil)
+    nota = obtener_nota_por_cita(id_cita)
+    return render_template("medico/ver_cita.html",
+                           cita=cita, perfil=perfil, nota=nota)
 
 
-# ── Marcar cita como Completada ────────────────────────────────
+# ── Formulario para completar cita + nota ─────────────────────
 
-@medico_bp.route("/cita/completar/<int:id_cita>", methods=["POST"])
+@medico_bp.route("/cita/completar/<int:id_cita>", methods=["GET", "POST"])
 @login_required
 @rol_requerido("medico")
 def completar_cita(id_cita):
@@ -68,10 +71,40 @@ def completar_cita(id_cita):
         flash("Sin permiso.", "danger")
         return redirect(url_for("medico.dashboard"))
 
-    r = cambiar_estado_cita(id_cita, "Completada")
-    flash("Cita marcada como completada." if r["ok"] else f"Error: {r['error']}",
-          "success" if r["ok"] else "danger")
-    return redirect(url_for("medico.dashboard"))
+    if cita["estado"] != "Activa":
+        flash("Solo puedes completar citas activas.", "warning")
+        return redirect(url_for("medico.ver_cita", id_cita=id_cita))
+
+    if request.method == "POST":
+        diagnostico   = request.form.get("diagnostico",   "").strip()
+        tratamiento   = request.form.get("tratamiento",   "").strip()
+        proxima_cita  = request.form.get("proxima_cita",  "").strip()
+        observaciones = request.form.get("observaciones", "").strip()
+
+        if not diagnostico:
+            flash("El diagnóstico es obligatorio.", "danger")
+            return render_template("medico/completar_cita.html",
+                                   cita=cita, perfil=perfil)
+
+        # 1. Marcar cita como Completada
+        r = cambiar_estado_cita(id_cita, "Completada")
+        if not r["ok"]:
+            flash(f"Error al completar la cita: {r['error']}", "danger")
+            return render_template("medico/completar_cita.html",
+                                   cita=cita, perfil=perfil)
+
+        # 2. Guardar nota de consulta
+        rn = crear_nota(id_cita, diagnostico, tratamiento,
+                        proxima_cita, observaciones)
+        if not rn["ok"]:
+            flash(f"Cita completada, pero no se pudo guardar la nota: {rn['error']}", "warning")
+        else:
+            flash("¡Cita completada y nota de consulta registrada!", "success")
+
+        return redirect(url_for("medico.ver_cita", id_cita=id_cita))
+
+    return render_template("medico/completar_cita.html",
+                           cita=cita, perfil=perfil)
 
 
 # ── Horario del día filtrable ──────────────────────────────────
