@@ -1,9 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Inicio – MediCitas IPS{% endblock %}
-
-{% block head_extra %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/chatbot.css') }}" />
-{% endblock %}
+{% block title %}Inicio – MediCitas EPS{% endblock %}
 
 {% block content %}
 
@@ -35,11 +31,77 @@
         </div>
       </div>
 
-      <!-- Ilustración derecha -->
-      <div class="col-lg-6 d-none d-lg-flex justify-content-center mt-5 mt-lg-0">
-        <div class="hero-illustration">
-          <div class="circle-bg"></div>
-          <i class="bi bi-heart-pulse hero-icon"></i>
+      <!-- ── Columna derecha: imagen médico + elementos flotantes ── -->
+      <div class="col-lg-6 d-none d-lg-flex justify-content-center align-items-center mt-5 mt-lg-0">
+        <div class="hero-visual">
+
+          <!-- Anillos decorativos animados -->
+          <div class="hero-ring ring-1"></div>
+          <div class="hero-ring ring-2"></div>
+          <div class="hero-ring ring-3"></div>
+
+          <!-- Marco fotográfico principal -->
+          <div class="hero-photo-frame">
+            <img
+              src="https://images.unsplash.com/photo-1582750433449-648ed127bb54?w=480&h=600&fit=crop&crop=faces,top&q=90&auto=format"
+              alt="Médico profesional"
+              class="hero-photo"
+              onerror="this.onerror=null;
+                this.src='https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=480&h=600&fit=crop&crop=faces,top&q=88&auto=format';"
+            />
+            <!-- Degradado inferior para fundir con el fondo -->
+            <div class="hero-photo-fade"></div>
+            <!-- Borde luminoso -->
+            <div class="hero-photo-border"></div>
+          </div>
+
+          <!-- ── Chips flotantes ── -->
+
+          <!-- Chip arriba-derecha: disponibilidad -->
+          <div class="hero-chip chip-top-right">
+            <div class="chip-icon-wrap chip-red">
+              <i class="bi bi-heart-pulse-fill"></i>
+            </div>
+            <div class="chip-text">
+              <div class="chip-label">Disponible</div>
+              <div class="chip-value">24 / 7</div>
+            </div>
+            <span class="chip-pulse-dot"></span>
+          </div>
+
+          <!-- Chip abajo-izquierda: cita confirmada -->
+          <div class="hero-chip chip-bottom-left">
+            <div class="chip-icon-wrap chip-green">
+              <i class="bi bi-calendar-check-fill"></i>
+            </div>
+            <div class="chip-text">
+              <div class="chip-label">Cita confirmada</div>
+              <div class="chip-value">Hoy · 10:30 AM ✓</div>
+            </div>
+          </div>
+
+          <!-- Chip izquierda-media: especialistas -->
+          <div class="hero-chip chip-mid-left">
+            <div class="chip-icon-wrap chip-blue">
+              <i class="bi bi-people-fill"></i>
+            </div>
+            <div class="chip-text">
+              <div class="chip-label">Especialistas</div>
+              <div class="chip-value">+12 activos</div>
+            </div>
+          </div>
+
+          <!-- Chip abajo-derecha: sin esperas -->
+          <div class="hero-chip chip-bottom-right">
+            <div class="chip-icon-wrap chip-purple">
+              <i class="bi bi-lightning-charge-fill"></i>
+            </div>
+            <div class="chip-text">
+              <div class="chip-label">Sin filas</div>
+              <div class="chip-value">100 % digital</div>
+            </div>
+          </div>
+
         </div>
       </div>
 
@@ -53,7 +115,6 @@
     <h2 class="section-title text-center mb-5">¿Qué deseas hacer?</h2>
     <div class="row g-4 justify-content-center">
 
-      <!-- Registrarse -->
       <div class="col-md-6 col-lg-3">
         <a href="{{ url_for('auth.registro') }}" class="action-card">
           <div class="card-icon-wrap bg-blue-soft">
@@ -65,7 +126,6 @@
         </a>
       </div>
 
-      <!-- Reservar cita -->
       <div class="col-md-6 col-lg-3">
         <a href="{{ url_for('auth.login') }}" class="action-card">
           <div class="card-icon-wrap bg-green-soft">
@@ -77,7 +137,6 @@
         </a>
       </div>
 
-      <!-- Consultar cita -->
       <div class="col-md-6 col-lg-3">
         <a href="{{ url_for('auth.login') }}" class="action-card">
           <div class="card-icon-wrap bg-purple-soft">
@@ -89,7 +148,6 @@
         </a>
       </div>
 
-      <!-- Actualizar cita -->
       <div class="col-md-6 col-lg-3">
         <a href="{{ url_for('auth.login') }}" class="action-card">
           <div class="card-icon-wrap bg-orange-soft">
@@ -117,7 +175,7 @@
       </div>
       <div class="col-6 col-md-3">
         <div class="stat-box">
-          <div class="stat-number">13</div>
+          <div class="stat-number">12</div>
           <div class="stat-label">Especialidades</div>
         </div>
       </div>
@@ -137,8 +195,4 @@
   </div>
 </section>
 
-{% endblock %}
-
-{% block scripts %}
-<script src="{{ url_for('static', filename='js/chatbot.js') }}"></script>
 {% endblock %}
