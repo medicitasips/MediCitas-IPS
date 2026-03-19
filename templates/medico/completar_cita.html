@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% from 'partials/estado_badge.html' import badge %}
+{% block title %}Completar Cita #{{ cita.id_cita }} – Médico{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-7">
+
+      <!-- Encabezado -->
+      <div class="page-header mb-4">
+        <div class="page-icon bg-green-soft">
+          <i class="bi bi-clipboard2-pulse-fill text-success"></i>
+        </div>
+        <div>
+          <h2 class="page-title">Nota de Consulta</h2>
+          <p class="page-subtitle">Cita #{{ cita.id_cita }} &bull; {{ cita.pac_nombre }} {{ cita.pac_apellido }}</p>
+        </div>
+      </div>
+
+      <!-- Resumen de la cita -->
+      <div class="form-card mb-4" style="background:#f8fafc; border:1px solid #e5e7eb;">
+        <div class="row g-2" style="font-size:.875rem;">
+          <div class="col-sm-6">
+            <span class="text-muted">Paciente:</span>
+            <strong class="ms-1">{{ cita.pac_nombre }} {{ cita.pac_apellido }}</strong>
+          </div>
+          <div class="col-sm-6">
+            <span class="text-muted">Documento:</span>
+            <code class="ms-1">{{ cita.pac_documento }}</code>
+          </div>
+          <div class="col-sm-6">
+            <span class="text-muted">Especialidad:</span>
+            <span class="ms-1">{{ cita.especialidad }}</span>
+          </div>
+          <div class="col-sm-6">
+            <span class="text-muted">Fecha:</span>
+            <span class="ms-1">{{ cita.fecha }} &bull; {{ cita.hora_inicio }} – {{ cita.hora_fin }}</span>
+          </div>
+          {% if cita.motivo %}
+          <div class="col-12">
+            <span class="text-muted">Motivo del paciente:</span>
+            <span class="ms-1 fst-italic">{{ cita.motivo }}</span>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Formulario de nota -->
+      <div class="form-card">
+        <form method="POST"
+              action="{{ url_for('medico.completar_cita', id_cita=cita.id_cita) }}"
+              novalidate>
+
+          <div class="row g-4">
+
+            <!-- Diagnóstico -->
+            <div class="col-12">
+              <label class="form-label fw-600">
+                <i class="bi bi-heart-pulse me-1 text-danger"></i>
+                Diagnóstico <span class="text-danger">*</span>
+              </label>
+              <textarea class="form-control" name="diagnostico" rows="3"
+                        placeholder="Ej: Hipertensión arterial grado I (HTA), Faringitis aguda bacteriana..."
+                        required>{{ request.form.get('diagnostico', '') }}</textarea>
+              <div class="form-text">Campo obligatorio. Describe la impresión diagnóstica o diagnóstico definitivo.</div>
+            </div>
+
+            <!-- Tratamiento -->
+            <div class="col-12">
+              <label class="form-label fw-600">
+                <i class="bi bi-capsule me-1 text-primary"></i>
+                Tratamiento indicado
+              </label>
+              <textarea class="form-control" name="tratamiento" rows="3"
+                        placeholder="Ej: Losartán 50 mg cada 12 horas por 30 días. Dieta baja en sodio. Reposo relativo...">{{ request.form.get('tratamiento', '') }}</textarea>
+            </div>
+
+            <!-- Próxima cita -->
+            <div class="col-md-6">
+              <label class="form-label fw-600">
+                <i class="bi bi-calendar-check me-1 text-success"></i>
+                Próxima cita recomendada
+              </label>
+              <input type="text" class="form-control" name="proxima_cita"
+                     value="{{ request.form.get('proxima_cita', '') }}"
+                     placeholder="Ej: En 3 semanas, En 1 mes, No requiere..." />
+              <div class="form-text">Tiempo sugerido para el siguiente control.</div>
+            </div>
+
+            <!-- Observaciones adicionales -->
+            <div class="col-12">
+              <label class="form-label fw-600">
+                <i class="bi bi-journal-text me-1 text-secondary"></i>
+                Observaciones adicionales
+              </label>
+              <textarea class="form-control" name="observaciones" rows="2"
+                        placeholder="Notas adicionales, indicaciones especiales, signos de alarma...">{{ request.form.get('observaciones', '') }}</textarea>
+            </div>
+
+          </div>
+
+          <!-- Aviso -->
+          <div class="alert border-0 mt-4 mb-0 py-2 px-3"
+               style="font-size:.82rem; background:#fff7ed; color:#9a3412; border-radius:10px; border-left:3px solid #fb923c !important;">
+            <i class="bi bi-exclamation-triangle me-1"></i>
+            Al guardar, la cita quedará marcada como <strong>Completada</strong> y no podrá reactivarse.
+          </div>
+
+          <!-- Botones -->
+          <div class="d-flex gap-3 mt-4">
+            <button type="submit" class="btn btn-success-custom">
+              <i class="bi bi-check2-circle me-2"></i>Completar y guardar nota
+            </button>
+            <a href="{{ url_for('medico.ver_cita', id_cita=cita.id_cita) }}"
+               class="btn btn-light">
+              <i class="bi bi-arrow-left me-1"></i>Cancelar
+            </a>
+          </div>
+
+        </form>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
