@@ -231,6 +231,117 @@ document.addEventListener("DOMContentLoaded", function () {
     }, 900);
   }
 
+  // ── Validación de contexto ────────────────────────────────────
+
+  /**
+   * Detecta si el texto ingresado está FUERA del contexto médico/agendamiento.
+   * Retorna { valido: bool, motivo: string } donde motivo es para logging interno.
+   *
+   * Estrategia multicapa:
+   *   1. Lista negra de patrones claramente fuera de contexto
+   *   2. Detección de frases/oraciones completas (el usuario escribe una oración)
+   *   3. Para el campo usuario: validación de formato de username
+   *   4. Para el motivo: lista blanca de palabras clave médicas (opcional)
+   */
+  function esContextoValido(texto, contexto) {
+    const tx = texto.toLowerCase().trim();
+    if (!tx) return { valido: false, motivo: "vacio" };
+
+    // ── CAPA 1: Lista negra de temas fuera de contexto ─────────
+    const patronesFuera = [
+
+      // Comida, bebida, delivery
+      { r: /\b(pizza|hamburguesa|hotdog|perro caliente|arepa|empanada|sushi|tacos?|burrito|sandwich|s[áa]ndwich|comida|almuerzo|desayuno|cena|postre|helado|chocolate|dulce|snack|merienda|restaurante|pedido|delivery|domicilio|pedir comida|rappi|ifood|uber eats)\b/, m: "comida" },
+
+      // Bebidas y alcohol
+      { r: /\b(cerveza|trago|aguardiente|ron|whisky|vodka|tequila|vino|licor|coctel|c[oó]ctel|jugo|gaseosa|refresco|bebida alco)\b/, m: "bebida" },
+
+      // Entretenimiento, ocio
+      { r: /\b(ch[ií]ste|chiste|cuento|historia inventada|cantar|bailar|baile|canci[oó]n|m[uú]sica|pel[íi]cula|serie|novela|videojuego|juego|deporte|f[úu]tbol|baloncesto|tenis|nataci[oó]n|paseo|viaje|vacaciones|resort|hotel|playa|monta[nñ]a|senderismo)\b/, m: "entretenimiento" },
+
+      // Peticiones sociales, relaciones
+      { r: /\b(inv[íi]ta(me|te|nos|r(me)?)|sal(ir|imos|ga)|date|cita rom[áa]ntica|novia?|novio|enamorado|amor|casarnos|matrimonio|amigo|amistad|conocer(me|te)|agregar|seguir en (instagram|facebook|twitter|tiktok))\b/, m: "social" },
+
+      // Redes sociales y tecnología irrelevante
+      { r: /\b(instagram|facebook|twitter|tiktok|youtube|netflix|spotify|whatsapp|telegram|discord|twitch|snapchat|pinterest|linkedin|tinder|bumble)\b/, m: "redes" },
+
+      // Preguntas filosóficas, generales o de IA
+      { r: /\b(qu[eé] eres|qui[eé]n eres|eres (humano|robot|ia|inteligencia)|sentido de la vida|dios|religi[oó]n|pol[íi]tica|gobierno|presidente|partido|elecciones?|econom[íi]a|mercado (de valores|burs[áa]til)|cripto|bitcoin|ethereum|nft)\b/, m: "filosofia_politica" },
+
+      // Clima, noticias, eventos generales
+      { r: /\b(clima|tiempo (hoy|ma[nñ]ana)|pron[oó]stico|noticias?|[úu]ltimas noticias|breaking news|mundial|copa del mundo|olimpiadas|evento deportivo)\b/, m: "noticias" },
+
+      // Tareas escolares, academico irrelevante
+      { r: /\b(tarea|ejercicio de (matem[áa]ticas|f[íi]sica|qu[íi]mica|historia|biolog[íi]a)|resuelve|cu[áa]nto es \d|ecuaci[oó]n|teorema|formula|poema|redacci[oó]n|ensayo|trabajo de grado)\b/, m: "academico" },
+
+      // Hacking, seguridad ofensiva
+      { r: /\b(hack|exploit|vulnerabilidad|inyecci[oó]n (sql|js)|xss|phishing|malware|virus|keylogger|contrase[nñ]a ajena|acceso no autorizado|burlar|saltarme)\b/, m: "seguridad" },
+
+      // Insultos o lenguaje inapropiado
+      { r: /\b(idiota|imbécil|estúpido|estupido|maldita?|maldito|pendejo|maric[oó]n|hp\b|hijueputa|puta|gonorrea|mierda|c[ao]brón|c[ao]bron|tonto|bruto|inútil|inutil)\b/, m: "insulto" },
+
+      // Solicitudes imposibles o absurdas
+      { r: /\b(vuela|teletrans|magia|truco|adivina|predice|l[oó]tera|apuesta|casino|ruleta|poker|blackjack)\b/, m: "absurdo" },
+
+      // Preguntas de recetas o instrucciones no médicas
+      { r: /\b(receta (de cocina|para hacer|del pastel)|c[oó]mo (cocinar|preparar|hacer) (arroz|pollo|carne|pasta|sopa)|ingredientes)\b/, m: "receta_cocina" },
+    ];
+
+    for (const { r, m } of patronesFuera) {
+      if (r.test(tx)) return { valido: false, motivo: m };
+    }
+
+    // ── CAPA 2: Detección de frases/oraciones completas ────────
+    // Una oración tiene verbo conjugado + sujeto. Los usernames no.
+    if (contexto === "usuario") {
+      const palabras = tx.split(/\s+/);
+
+      // Más de 3 palabras → casi seguro que no es un username
+      if (palabras.length > 3) return { valido: false, motivo: "demasiadas_palabras" };
+
+      // Contiene verbos conjugados típicos de peticiones
+      const verbosOrden = /\b(inv[íi]tame|d[íi]me|cu[eé]ntame|explica|hazme|dame|mándame|env[íi]ame|ayúdame|dime|quiero|necesito|quisiera|podr[íi]as|puedes|podr[ií]a)\b/;
+      if (verbosOrden.test(tx)) return { valido: false, motivo: "verbo_orden" };
+
+      // Solo se permiten caracteres válidos de username:
+      // letras (incluyendo tildes), números, puntos, guiones, underscores
+      const formatoUsername = /^[a-záéíóúüñA-ZÁÉÍÓÚÜÑ0-9._\-]{3,60}$/;
+      if (!formatoUsername.test(tx.replace(/\s/g, ""))) {
+        // Si tiene caracteres raros pero podría ser un username con espacio
+        // (ej: "juan perez" podría ser un username), solo rechazar si
+        // claramente no lo parece
+        if (/[¿?¡!,;:()"'\/\\<>]/.test(tx)) return { valido: false, motivo: "caracteres_invalidos" };
+      }
+
+      return { valido: true, motivo: "ok" };
+    }
+
+    // ── CAPA 3: Validación de motivo médico ────────────────────
+    if (contexto === "motivo") {
+      const palabras = tx.split(/\s+/);
+
+      // Si tiene muchas palabras y verbos de petición, rechazar
+      const verbosOrden = /\b(inv[íi]tame|d[íi]me|cu[eé]ntame|explica|hazme|dame|mándame|env[íi]ame|quiero que me|necesito que)\b/;
+      if (verbosOrden.test(tx)) return { valido: false, motivo: "peticion_fuera_contexto" };
+
+      // Palabras clave médicas/sintomáticas que dan confianza al contexto
+      const contextoClinico = /\b(dolor|molestia|malestar|s[íi]ntoma|fiebre|tos|gripa|gripe|nausea|mareo|v[oó]mito|diarrea|estreñimiento|estrenim|sangrado|herida|golpe|fractura|esguince|lesi[oó]n|dificultad (para|al) (respirar|caminar|dormir)|insomnio|ansiedad|depresi[oó]n|estr[eé]s|cansan?cio|fatiga|debilidad|p[áa]lpitaci|taquicardia|presi[oó]n|glucosa|az[úu]car|colesterol|control|seguimiento|revisi[oó]n|chequeo|examen|resultado|laboratorio|ecograf[íi]a|radiograf[íi]a|medicamento|f[oó]rmula|receta|vacuna|embarazo|parto|menstruaci[oó]n|dental|muelas?|encías|vista|o[íi]dos?|alergia|picadura|rash|sarpullido|acné|psicolog[íi]a|nutrici[oó]n|fisioterapia|ortopedia|cirug[íi]a)\b/;
+
+      // Si el motivo es muy corto o contiene palabras clínicas → válido
+      if (palabras.length <= 6 || contextoClinico.test(tx)) return { valido: true, motivo: "ok" };
+
+      // Si es muy largo pero no tiene nada clínico, revisar patrones fuera
+      // (ya validado arriba con lista negra)
+      return { valido: true, motivo: "ok" };
+    }
+
+    return { valido: true, motivo: "ok" };
+  }
+
+  const MSG_FUERA_CONTEXTO =
+    "⚕️ Solo estoy habilitado para ayudarte a <strong>agendar citas m\u00e9dicas</strong>. " +
+    "No puedo atender esa solicitud. Por favor ingresa la informaci\u00f3n solicitada.";
+
   // PASO 1 – Pedir usuario
   function askUsername() {
     updateProgress(1);
@@ -250,6 +361,18 @@ document.addEventListener("DOMContentLoaded", function () {
     const submit = () => {
       const val = inp.value.trim();
       if (!val) return;
+
+      // Validar que el texto tenga sentido como nombre de usuario
+      const check = esContextoValido(val, "usuario");
+      if (!check.valido) {
+        inp.value = "";
+        inp.style.borderColor = "#ef4444";
+        setTimeout(() => { inp.style.borderColor = ""; }, 2000);
+        botMsg(MSG_FUERA_CONTEXTO, true);
+        inp.focus();
+        return;
+      }
+
       state._username = val;
       userMsg(val);
       clearFooter();
@@ -683,7 +806,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // PASO 7b – Motivo (opcional)
   function askMotivo() {
-    botMsg("💬 ¿Tienes algún <strong>motivo</strong> de consulta? <small style='color:#6b7280'>(Opcional)</small>");
+    botMsg("💬 ¿Tienes algún <strong>motivo</strong> de consulta? <small style='color:#6b7280'>(Opcional — describe tu síntoma o déjalo vacío)</small>");
     footer.innerHTML = `
       <div class="cb-input-row">
         <input id="cb-inp-motivo" class="cb-input" type="text"
@@ -697,8 +820,23 @@ document.addEventListener("DOMContentLoaded", function () {
     inp.focus();
 
     const submit = () => {
-      state.motivo = inp.value.trim();
-      userMsg(state.motivo || "(Sin motivo especificado)");
+      const val = inp.value.trim();
+
+      // Si hay texto, validar que sea contexto médico
+      if (val) {
+        const check = esContextoValido(val, "motivo");
+        if (!check.valido) {
+          inp.value = "";
+          inp.style.borderColor = "#ef4444";
+          setTimeout(() => { inp.style.borderColor = ""; }, 2000);
+          botMsg(MSG_FUERA_CONTEXTO, true);
+          inp.focus();
+          return;
+        }
+      }
+
+      state.motivo = val;
+      userMsg(val || "(Sin motivo especificado)");
       clearFooter();
       confirmStep();
     };
