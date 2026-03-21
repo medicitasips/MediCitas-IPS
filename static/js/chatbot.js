@@ -358,11 +358,11 @@ document.addEventListener("DOMContentLoaded", function () {
     const btn = document.getElementById("cb-btn-user");
     inp.focus();
 
-    const submit = () => {
+    const submit = async () => {
       const val = inp.value.trim();
       if (!val) return;
 
-      // Validar que el texto tenga sentido como nombre de usuario
+      // Capa 1: validar contexto
       const check = esContextoValido(val, "usuario");
       if (!check.valido) {
         inp.value = "";
@@ -373,11 +373,53 @@ document.addEventListener("DOMContentLoaded", function () {
         return;
       }
 
-      state._username = val;
+      // Capa 2: verificar que el usuario existe en la BD
+      btn.disabled = true;
+      inp.disabled = true;
+      typing();
+
+      let data;
+      try {
+        const res = await fetch("/chatbot/verificar-usuario", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username: val }),
+        });
+        data = await res.json();
+      } catch {
+        removeTyping();
+        btn.disabled = false;
+        inp.disabled = false;
+        botMsg("❌ Error de conexión. Por favor intenta de nuevo.", true);
+        inp.focus();
+        return;
+      }
+
+      removeTyping();
+
+      if (!data.existe) {
+        const mensajes = {
+          no_encontrado:  `El usuario <strong>${escHtml(val)}</strong> no está registrado. Verifica que estés escribiendo correctamente tu usuario o <a href="/auth/registro" style="color:#1a6cf6">regístrate aquí</a>.`,
+          no_es_paciente: "Este chatbot es exclusivo para pacientes. Si eres médico o administrador, accede desde el <a href='/auth/login' style='color:#1a6cf6'>portal</a>.",
+          inactivo:       `La cuenta <strong>${escHtml(val)}</strong> está desactivada. Contacta al administrador del sistema.`,
+        };
+        const msg = mensajes[data.motivo] || "Usuario no encontrado. Por favor verifica e intenta de nuevo.";
+        inp.value   = "";
+        inp.disabled = false;
+        btn.disabled = false;
+        botMsg(`❌ ${msg}`, true);
+        inp.focus();
+        return;
+      }
+
+      // Usuario existe → guardar y avanzar al password
+      state._username  = val;
+      state._nombrePac = data.nombre;
       userMsg(val);
       clearFooter();
       askPassword();
     };
+
     btn.addEventListener("click", submit);
     inp.addEventListener("keydown", e => { if (e.key === "Enter") submit(); });
   }
@@ -385,7 +427,10 @@ document.addEventListener("DOMContentLoaded", function () {
   // PASO 2 – Pedir contraseña
   function askPassword() {
     updateProgress(2);
-    botMsg(`Hola <strong>${escHtml(state._username)}</strong> 👤<br>Ahora ingresa tu <strong>contraseña</strong>:`);
+    const saludo = state._nombrePac
+      ? `Hola <strong>${escHtml(state._nombrePac)}</strong> 👤`
+      : `Hola <strong>${escHtml(state._username)}</strong> 👤`;
+    botMsg(`${saludo}<br>Ahora ingresa tu <strong>contraseña</strong>:`);
     footer.innerHTML = `
       <div class="cb-input-row">
         <div class="cb-pw-wrap">
