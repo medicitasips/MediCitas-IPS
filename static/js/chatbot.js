@@ -68,6 +68,29 @@ document.addEventListener("DOMContentLoaded", function () {
   function closeChatbot() {
     win.classList.remove("cb-open");
     fab.innerHTML = '<i class="bi bi-chat-heart-fill"></i><span class="cb-fab-badge"></span>';
+
+    // Reiniciar conversación para la próxima apertura
+    setTimeout(() => {
+      // Limpiar mensajes
+      messages.innerHTML = "";
+      clearFooter();
+
+      // Resetear estado completo
+      state.step         = 0;
+      state.paciente     = null;
+      state.especialidad = null;
+      state.medico       = null;
+      state.eps          = null;
+      state.fecha        = null;
+      state.hora_inicio  = null;
+      state.hora_fin     = null;
+      state.motivo       = "";
+      state._username    = undefined;
+      state._nombrePac   = undefined;
+
+      // Resetear barra de progreso
+      updateProgress(0);
+    }, 300); // esperar a que termine la animación de cierre
   }
 
   // ── Barra de progreso ─────────────────────────────────────
@@ -87,7 +110,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const wrap   = document.createElement("div");
     wrap.className = `cb-msg-bot ${isError ? "cb-msg-error" : ""}`;
     wrap.innerHTML = `
-      <div class="cb-bot-icon"><i class="bi bi-robot"></i></div>
+      <div class="cb-bot-icon">${CB_BOT_ICON}</div>
       <div class="cb-bubble">${html}</div>`;
     messages.appendChild(wrap);
     scrollBottom();
@@ -107,7 +130,7 @@ document.addEventListener("DOMContentLoaded", function () {
     wrap.className = "cb-msg-bot cb-typing";
     wrap.id = "cb-typing-indicator";
     wrap.innerHTML = `
-      <div class="cb-bot-icon"><i class="bi bi-robot"></i></div>
+      <div class="cb-bot-icon">${CB_BOT_ICON}</div>
       <div class="cb-bubble">
         <span class="cb-dot"></span>
         <span class="cb-dot"></span>
@@ -220,7 +243,29 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // ── FLUJO PRINCIPAL ───────────────────────────────────────
 
-  function startFlow() {
+  const CB_BOT_ICON = `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" width="28" height="28" style="border-radius:50%;display:block;">
+    <circle cx="100" cy="100" r="100" fill="#1a6cf6"/>
+    <ellipse cx="100" cy="178" rx="44" ry="28" fill="#ffffff"/>
+    <rect x="56" y="155" width="88" height="45" fill="#ffffff" rx="4"/>
+    <rect x="88" y="132" width="24" height="22" fill="#f5c5a3" rx="4"/>
+    <ellipse cx="100" cy="110" rx="38" ry="42" fill="#f5c5a3"/>
+    <path d="M62 108 Q60 72 100 65 Q140 72 138 108 Q130 78 100 75 Q70 78 62 108Z" fill="#2d1b0e"/>
+    <ellipse cx="100" cy="72" rx="30" ry="12" fill="#2d1b0e"/>
+    <ellipse cx="62" cy="112" rx="7" ry="9" fill="#f5c5a3"/>
+    <ellipse cx="138" cy="112" rx="7" ry="9" fill="#f5c5a3"/>
+    <ellipse cx="82" cy="118" rx="9" ry="6" fill="#f0a090" opacity="0.5"/>
+    <ellipse cx="118" cy="118" rx="9" ry="6" fill="#f0a090" opacity="0.5"/>
+    <ellipse cx="90" cy="103" rx="5.5" ry="6" fill="#2d1b0e"/>
+    <ellipse cx="110" cy="103" rx="5.5" ry="6" fill="#2d1b0e"/>
+    <circle cx="92" cy="101" r="1.5" fill="white"/>
+    <circle cx="112" cy="101" r="1.5" fill="white"/>
+    <path d="M87 121 Q100 130 113 121" fill="none" stroke="#2d1b0e" stroke-width="2" stroke-linecap="round"/>
+    <path d="M63 108 Q63 72 100 68 Q137 72 137 108" fill="none" stroke="#1a1a2e" stroke-width="5" stroke-linecap="round"/>
+    <rect x="55" y="103" width="16" height="22" rx="6" fill="#2d2d4e"/>
+    <rect x="129" y="103" width="16" height="22" rx="6" fill="#2d2d4e"/>
+    <path d="M129 118 Q148 118 148 138" fill="none" stroke="#1a1a2e" stroke-width="3" stroke-linecap="round"/>
+    <rect x="143" y="133" width="14" height="10" rx="5" fill="#1a1a2e"/>
+  </svg>`;
     state.step = 1;
     updateProgress(0);
     typing();
@@ -230,6 +275,117 @@ document.addEventListener("DOMContentLoaded", function () {
       setTimeout(() => askUsername(), 700);
     }, 900);
   }
+
+  // ── Validación de contexto ────────────────────────────────────
+
+  /**
+   * Detecta si el texto ingresado está FUERA del contexto médico/agendamiento.
+   * Retorna { valido: bool, motivo: string } donde motivo es para logging interno.
+   *
+   * Estrategia multicapa:
+   *   1. Lista negra de patrones claramente fuera de contexto
+   *   2. Detección de frases/oraciones completas (el usuario escribe una oración)
+   *   3. Para el campo usuario: validación de formato de username
+   *   4. Para el motivo: lista blanca de palabras clave médicas (opcional)
+   */
+  function esContextoValido(texto, contexto) {
+    const tx = texto.toLowerCase().trim();
+    if (!tx) return { valido: false, motivo: "vacio" };
+
+    // ── CAPA 1: Lista negra de temas fuera de contexto ─────────
+    const patronesFuera = [
+
+      // Comida, bebida, delivery
+      { r: /\b(pizza|hamburguesa|hotdog|perro caliente|arepa|empanada|sushi|tacos?|burrito|sandwich|s[áa]ndwich|comida|almuerzo|desayuno|cena|postre|helado|chocolate|dulce|snack|merienda|restaurante|pedido|delivery|domicilio|pedir comida|rappi|ifood|uber eats)\b/, m: "comida" },
+
+      // Bebidas y alcohol
+      { r: /\b(cerveza|trago|aguardiente|ron|whisky|vodka|tequila|vino|licor|coctel|c[oó]ctel|jugo|gaseosa|refresco|bebida alco)\b/, m: "bebida" },
+
+      // Entretenimiento, ocio
+      { r: /\b(ch[ií]ste|chiste|cuento|historia inventada|cantar|bailar|baile|canci[oó]n|m[uú]sica|pel[íi]cula|serie|novela|videojuego|juego|deporte|f[úu]tbol|baloncesto|tenis|nataci[oó]n|paseo|viaje|vacaciones|resort|hotel|playa|monta[nñ]a|senderismo)\b/, m: "entretenimiento" },
+
+      // Peticiones sociales, relaciones
+      { r: /\b(inv[íi]ta(me|te|nos|r(me)?)|sal(ir|imos|ga)|date|cita rom[áa]ntica|novia?|novio|enamorado|amor|casarnos|matrimonio|amigo|amistad|conocer(me|te)|agregar|seguir en (instagram|facebook|twitter|tiktok))\b/, m: "social" },
+
+      // Redes sociales y tecnología irrelevante
+      { r: /\b(instagram|facebook|twitter|tiktok|youtube|netflix|spotify|whatsapp|telegram|discord|twitch|snapchat|pinterest|linkedin|tinder|bumble)\b/, m: "redes" },
+
+      // Preguntas filosóficas, generales o de IA
+      { r: /\b(qu[eé] eres|qui[eé]n eres|eres (humano|robot|ia|inteligencia)|sentido de la vida|dios|religi[oó]n|pol[íi]tica|gobierno|presidente|partido|elecciones?|econom[íi]a|mercado (de valores|burs[áa]til)|cripto|bitcoin|ethereum|nft)\b/, m: "filosofia_politica" },
+
+      // Clima, noticias, eventos generales
+      { r: /\b(clima|tiempo (hoy|ma[nñ]ana)|pron[oó]stico|noticias?|[úu]ltimas noticias|breaking news|mundial|copa del mundo|olimpiadas|evento deportivo)\b/, m: "noticias" },
+
+      // Tareas escolares, academico irrelevante
+      { r: /\b(tarea|ejercicio de (matem[áa]ticas|f[íi]sica|qu[íi]mica|historia|biolog[íi]a)|resuelve|cu[áa]nto es \d|ecuaci[oó]n|teorema|formula|poema|redacci[oó]n|ensayo|trabajo de grado)\b/, m: "academico" },
+
+      // Hacking, seguridad ofensiva
+      { r: /\b(hack|exploit|vulnerabilidad|inyecci[oó]n (sql|js)|xss|phishing|malware|virus|keylogger|contrase[nñ]a ajena|acceso no autorizado|burlar|saltarme)\b/, m: "seguridad" },
+
+      // Insultos o lenguaje inapropiado
+      { r: /\b(idiota|imbécil|estúpido|estupido|maldita?|maldito|pendejo|maric[oó]n|hp\b|hijueputa|puta|gonorrea|mierda|c[ao]brón|c[ao]bron|tonto|bruto|inútil|inutil)\b/, m: "insulto" },
+
+      // Solicitudes imposibles o absurdas
+      { r: /\b(vuela|teletrans|magia|truco|adivina|predice|l[oó]tera|apuesta|casino|ruleta|poker|blackjack)\b/, m: "absurdo" },
+
+      // Preguntas de recetas o instrucciones no médicas
+      { r: /\b(receta (de cocina|para hacer|del pastel)|c[oó]mo (cocinar|preparar|hacer) (arroz|pollo|carne|pasta|sopa)|ingredientes)\b/, m: "receta_cocina" },
+    ];
+
+    for (const { r, m } of patronesFuera) {
+      if (r.test(tx)) return { valido: false, motivo: m };
+    }
+
+    // ── CAPA 2: Detección de frases/oraciones completas ────────
+    // Una oración tiene verbo conjugado + sujeto. Los usernames no.
+    if (contexto === "usuario") {
+      const palabras = tx.split(/\s+/);
+
+      // Más de 3 palabras → casi seguro que no es un username
+      if (palabras.length > 3) return { valido: false, motivo: "demasiadas_palabras" };
+
+      // Contiene verbos conjugados típicos de peticiones
+      const verbosOrden = /\b(inv[íi]tame|d[íi]me|cu[eé]ntame|explica|hazme|dame|mándame|env[íi]ame|ayúdame|dime|quiero|necesito|quisiera|podr[íi]as|puedes|podr[ií]a)\b/;
+      if (verbosOrden.test(tx)) return { valido: false, motivo: "verbo_orden" };
+
+      // Solo se permiten caracteres válidos de username:
+      // letras (incluyendo tildes), números, puntos, guiones, underscores
+      const formatoUsername = /^[a-záéíóúüñA-ZÁÉÍÓÚÜÑ0-9._\-]{3,60}$/;
+      if (!formatoUsername.test(tx.replace(/\s/g, ""))) {
+        // Si tiene caracteres raros pero podría ser un username con espacio
+        // (ej: "juan perez" podría ser un username), solo rechazar si
+        // claramente no lo parece
+        if (/[¿?¡!,;:()"'\/\\<>]/.test(tx)) return { valido: false, motivo: "caracteres_invalidos" };
+      }
+
+      return { valido: true, motivo: "ok" };
+    }
+
+    // ── CAPA 3: Validación de motivo médico ────────────────────
+    if (contexto === "motivo") {
+      const palabras = tx.split(/\s+/);
+
+      // Si tiene muchas palabras y verbos de petición, rechazar
+      const verbosOrden = /\b(inv[íi]tame|d[íi]me|cu[eé]ntame|explica|hazme|dame|mándame|env[íi]ame|quiero que me|necesito que)\b/;
+      if (verbosOrden.test(tx)) return { valido: false, motivo: "peticion_fuera_contexto" };
+
+      // Palabras clave médicas/sintomáticas que dan confianza al contexto
+      const contextoClinico = /\b(dolor|molestia|malestar|s[íi]ntoma|fiebre|tos|gripa|gripe|nausea|mareo|v[oó]mito|diarrea|estreñimiento|estrenim|sangrado|herida|golpe|fractura|esguince|lesi[oó]n|dificultad (para|al) (respirar|caminar|dormir)|insomnio|ansiedad|depresi[oó]n|estr[eé]s|cansan?cio|fatiga|debilidad|p[áa]lpitaci|taquicardia|presi[oó]n|glucosa|az[úu]car|colesterol|control|seguimiento|revisi[oó]n|chequeo|examen|resultado|laboratorio|ecograf[íi]a|radiograf[íi]a|medicamento|f[oó]rmula|receta|vacuna|embarazo|parto|menstruaci[oó]n|dental|muelas?|encías|vista|o[íi]dos?|alergia|picadura|rash|sarpullido|acné|psicolog[íi]a|nutrici[oó]n|fisioterapia|ortopedia|cirug[íi]a)\b/;
+
+      // Si el motivo es muy corto o contiene palabras clínicas → válido
+      if (palabras.length <= 6 || contextoClinico.test(tx)) return { valido: true, motivo: "ok" };
+
+      // Si es muy largo pero no tiene nada clínico, revisar patrones fuera
+      // (ya validado arriba con lista negra)
+      return { valido: true, motivo: "ok" };
+    }
+
+    return { valido: true, motivo: "ok" };
+  }
+
+  const MSG_FUERA_CONTEXTO =
+    "⚕️ Solo estoy habilitado para ayudarte a <strong>agendar citas m\u00e9dicas</strong>. " +
+    "No puedo atender esa solicitud. Por favor ingresa la informaci\u00f3n solicitada.";
 
   // PASO 1 – Pedir usuario
   function askUsername() {
@@ -247,14 +403,68 @@ document.addEventListener("DOMContentLoaded", function () {
     const btn = document.getElementById("cb-btn-user");
     inp.focus();
 
-    const submit = () => {
+    const submit = async () => {
       const val = inp.value.trim();
       if (!val) return;
-      state._username = val;
+
+      // Capa 1: validar contexto
+      const check = esContextoValido(val, "usuario");
+      if (!check.valido) {
+        inp.value = "";
+        inp.style.borderColor = "#ef4444";
+        setTimeout(() => { inp.style.borderColor = ""; }, 2000);
+        botMsg(MSG_FUERA_CONTEXTO, true);
+        inp.focus();
+        return;
+      }
+
+      // Capa 2: verificar que el usuario existe en la BD
+      btn.disabled = true;
+      inp.disabled = true;
+      typing();
+
+      let data;
+      try {
+        const res = await fetch("/chatbot/verificar-usuario", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username: val }),
+        });
+        data = await res.json();
+      } catch {
+        removeTyping();
+        btn.disabled = false;
+        inp.disabled = false;
+        botMsg("❌ Error de conexión. Por favor intenta de nuevo.", true);
+        inp.focus();
+        return;
+      }
+
+      removeTyping();
+
+      if (!data.existe) {
+        const mensajes = {
+          no_encontrado:  `El usuario <strong>${escHtml(val)}</strong> no está registrado. Verifica que estés escribiendo correctamente tu usuario o <a href="/auth/registro" style="color:#1a6cf6">regístrate aquí</a>.`,
+          no_es_paciente: "Este chatbot es exclusivo para pacientes. Si eres médico o administrador, accede desde el <a href='/auth/login' style='color:#1a6cf6'>portal</a>.",
+          inactivo:       `La cuenta <strong>${escHtml(val)}</strong> está desactivada. Contacta al administrador del sistema.`,
+        };
+        const msg = mensajes[data.motivo] || "Usuario no encontrado. Por favor verifica e intenta de nuevo.";
+        inp.value   = "";
+        inp.disabled = false;
+        btn.disabled = false;
+        botMsg(`❌ ${msg}`, true);
+        inp.focus();
+        return;
+      }
+
+      // Usuario existe → guardar y avanzar al password
+      state._username  = val;
+      state._nombrePac = data.nombre;
       userMsg(val);
       clearFooter();
       askPassword();
     };
+
     btn.addEventListener("click", submit);
     inp.addEventListener("keydown", e => { if (e.key === "Enter") submit(); });
   }
@@ -262,7 +472,10 @@ document.addEventListener("DOMContentLoaded", function () {
   // PASO 2 – Pedir contraseña
   function askPassword() {
     updateProgress(2);
-    botMsg(`Hola <strong>${escHtml(state._username)}</strong> 👤<br>Ahora ingresa tu <strong>contraseña</strong>:`);
+    const saludo = state._nombrePac
+      ? `Hola <strong>${escHtml(state._nombrePac)}</strong> 👤`
+      : `Hola <strong>${escHtml(state._username)}</strong> 👤`;
+    botMsg(`${saludo}<br>Ahora ingresa tu <strong>contraseña</strong>:`);
     footer.innerHTML = `
       <div class="cb-input-row">
         <div class="cb-pw-wrap">
@@ -683,7 +896,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // PASO 7b – Motivo (opcional)
   function askMotivo() {
-    botMsg("💬 ¿Tienes algún <strong>motivo</strong> de consulta? <small style='color:#6b7280'>(Opcional)</small>");
+    botMsg("💬 ¿Tienes algún <strong>motivo</strong> de consulta? <small style='color:#6b7280'>(Opcional — describe tu síntoma o déjalo vacío)</small>");
     footer.innerHTML = `
       <div class="cb-input-row">
         <input id="cb-inp-motivo" class="cb-input" type="text"
@@ -697,8 +910,23 @@ document.addEventListener("DOMContentLoaded", function () {
     inp.focus();
 
     const submit = () => {
-      state.motivo = inp.value.trim();
-      userMsg(state.motivo || "(Sin motivo especificado)");
+      const val = inp.value.trim();
+
+      // Si hay texto, validar que sea contexto médico
+      if (val) {
+        const check = esContextoValido(val, "motivo");
+        if (!check.valido) {
+          inp.value = "";
+          inp.style.borderColor = "#ef4444";
+          setTimeout(() => { inp.style.borderColor = ""; }, 2000);
+          botMsg(MSG_FUERA_CONTEXTO, true);
+          inp.focus();
+          return;
+        }
+      }
+
+      state.motivo = val;
+      userMsg(val || "(Sin motivo especificado)");
       clearFooter();
       confirmStep();
     };
