@@ -21,6 +21,48 @@ from models.cita_model      import (crear_cita,
 chatbot_bp = Blueprint("chatbot", __name__, url_prefix="/chatbot")
 
 
+# ── 0. Verificar existencia del username ───────────────────────
+
+@chatbot_bp.route("/verificar-usuario", methods=["POST"])
+def verificar_usuario():
+    """
+    Verifica si un username existe en la BD y tiene rol 'paciente'.
+    NO verifica la contraseña.
+
+    Body JSON:  { "username": "..." }
+    Respuesta:
+        { "existe": true,  "nombre": "Juan" }   ← existe y es paciente
+        { "existe": false, "motivo": "no_encontrado" }
+        { "existe": false, "motivo": "no_es_paciente" }
+        { "existe": false, "motivo": "inactivo" }
+    """
+    data     = request.get_json(silent=True) or {}
+    username = data.get("username", "").strip()
+
+    if not username:
+        return jsonify({"existe": False, "motivo": "vacio"})
+
+    from models.usuario_model import obtener_usuario_por_username
+    from models.paciente_model import obtener_paciente_por_usuario
+
+    usuario = obtener_usuario_por_username(username)
+
+    if not usuario:
+        return jsonify({"existe": False, "motivo": "no_encontrado"})
+
+    if usuario["rol"] != "paciente":
+        return jsonify({"existe": False, "motivo": "no_es_paciente"})
+
+    if not usuario["activo"]:
+        return jsonify({"existe": False, "motivo": "inactivo"})
+
+    # Obtener el nombre del paciente para personalizar el saludo
+    perfil = obtener_paciente_por_usuario(usuario["id_usuario"])
+    nombre = perfil["nombre"] if perfil else username
+
+    return jsonify({"existe": True, "nombre": nombre})
+
+
 # ── Helpers internos ──────────────────────────────────────────
 
 def _str_hora(valor) -> str:
