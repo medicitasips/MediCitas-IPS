@@ -68,6 +68,29 @@ document.addEventListener("DOMContentLoaded", function () {
   function closeChatbot() {
     win.classList.remove("cb-open");
     fab.innerHTML = '<i class="bi bi-chat-heart-fill"></i><span class="cb-fab-badge"></span>';
+
+    // Reiniciar conversación para la próxima apertura
+    setTimeout(() => {
+      // Limpiar mensajes
+      messages.innerHTML = "";
+      clearFooter();
+
+      // Resetear estado completo
+      state.step         = 0;
+      state.paciente     = null;
+      state.especialidad = null;
+      state.medico       = null;
+      state.eps          = null;
+      state.fecha        = null;
+      state.hora_inicio  = null;
+      state.hora_fin     = null;
+      state.motivo       = "";
+      state._username    = undefined;
+      state._nombrePac   = undefined;
+
+      // Resetear barra de progreso
+      updateProgress(0);
+    }, 300); // esperar a que termine la animación de cierre
   }
 
   // ── Barra de progreso ─────────────────────────────────────
