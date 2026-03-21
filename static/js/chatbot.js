@@ -45,6 +45,9 @@ document.addEventListener("DOMContentLoaded", function () {
   const progLabel = document.getElementById("cb-progress-label");
   const stepDots  = document.querySelectorAll(".cb-step-dot");
 
+  // ── Avatar SVG del bot (declarado antes de usarse) ───────────
+  const CB_BOT_ICON = `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" width="28" height="28" style="border-radius:50%;display:block;"><circle cx="100" cy="100" r="100" fill="#1a6cf6"/><ellipse cx="100" cy="178" rx="44" ry="28" fill="#ffffff"/><rect x="56" y="155" width="88" height="45" fill="#ffffff" rx="4"/><rect x="88" y="132" width="24" height="22" fill="#f5c5a3" rx="4"/><ellipse cx="100" cy="110" rx="38" ry="42" fill="#f5c5a3"/><path d="M62 108 Q60 72 100 65 Q140 72 138 108 Q130 78 100 75 Q70 78 62 108Z" fill="#2d1b0e"/><ellipse cx="100" cy="72" rx="30" ry="12" fill="#2d1b0e"/><ellipse cx="62" cy="112" rx="7" ry="9" fill="#f5c5a3"/><ellipse cx="138" cy="112" rx="7" ry="9" fill="#f5c5a3"/><ellipse cx="82" cy="118" rx="9" ry="6" fill="#f0a090" opacity="0.5"/><ellipse cx="118" cy="118" rx="9" ry="6" fill="#f0a090" opacity="0.5"/><ellipse cx="90" cy="103" rx="5.5" ry="6" fill="#2d1b0e"/><ellipse cx="110" cy="103" rx="5.5" ry="6" fill="#2d1b0e"/><circle cx="92" cy="101" r="1.5" fill="white"/><circle cx="112" cy="101" r="1.5" fill="white"/><path d="M87 121 Q100 130 113 121" fill="none" stroke="#2d1b0e" stroke-width="2" stroke-linecap="round"/><path d="M63 108 Q63 72 100 68 Q137 72 137 108" fill="none" stroke="#1a1a2e" stroke-width="5" stroke-linecap="round"/><rect x="55" y="103" width="16" height="22" rx="6" fill="#2d2d4e"/><rect x="129" y="103" width="16" height="22" rx="6" fill="#2d2d4e"/><path d="M129 118 Q148 118 148 138" fill="none" stroke="#1a1a2e" stroke-width="3" stroke-linecap="round"/><rect x="143" y="133" width="14" height="10" rx="5" fill="#1a1a2e"/></svg>`;
+
   // ── Abrir / cerrar ventana ────────────────────────────────
   fab.addEventListener("click", () => {
     const isOpen = win.classList.contains("cb-open");
@@ -243,29 +246,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // ── FLUJO PRINCIPAL ───────────────────────────────────────
 
-  const CB_BOT_ICON = `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" width="28" height="28" style="border-radius:50%;display:block;">
-    <circle cx="100" cy="100" r="100" fill="#1a6cf6"/>
-    <ellipse cx="100" cy="178" rx="44" ry="28" fill="#ffffff"/>
-    <rect x="56" y="155" width="88" height="45" fill="#ffffff" rx="4"/>
-    <rect x="88" y="132" width="24" height="22" fill="#f5c5a3" rx="4"/>
-    <ellipse cx="100" cy="110" rx="38" ry="42" fill="#f5c5a3"/>
-    <path d="M62 108 Q60 72 100 65 Q140 72 138 108 Q130 78 100 75 Q70 78 62 108Z" fill="#2d1b0e"/>
-    <ellipse cx="100" cy="72" rx="30" ry="12" fill="#2d1b0e"/>
-    <ellipse cx="62" cy="112" rx="7" ry="9" fill="#f5c5a3"/>
-    <ellipse cx="138" cy="112" rx="7" ry="9" fill="#f5c5a3"/>
-    <ellipse cx="82" cy="118" rx="9" ry="6" fill="#f0a090" opacity="0.5"/>
-    <ellipse cx="118" cy="118" rx="9" ry="6" fill="#f0a090" opacity="0.5"/>
-    <ellipse cx="90" cy="103" rx="5.5" ry="6" fill="#2d1b0e"/>
-    <ellipse cx="110" cy="103" rx="5.5" ry="6" fill="#2d1b0e"/>
-    <circle cx="92" cy="101" r="1.5" fill="white"/>
-    <circle cx="112" cy="101" r="1.5" fill="white"/>
-    <path d="M87 121 Q100 130 113 121" fill="none" stroke="#2d1b0e" stroke-width="2" stroke-linecap="round"/>
-    <path d="M63 108 Q63 72 100 68 Q137 72 137 108" fill="none" stroke="#1a1a2e" stroke-width="5" stroke-linecap="round"/>
-    <rect x="55" y="103" width="16" height="22" rx="6" fill="#2d2d4e"/>
-    <rect x="129" y="103" width="16" height="22" rx="6" fill="#2d2d4e"/>
-    <path d="M129 118 Q148 118 148 138" fill="none" stroke="#1a1a2e" stroke-width="3" stroke-linecap="round"/>
-    <rect x="143" y="133" width="14" height="10" rx="5" fill="#1a1a2e"/>
-  </svg>`;
+  function startFlow() {
     state.step = 1;
     updateProgress(0);
     typing();
